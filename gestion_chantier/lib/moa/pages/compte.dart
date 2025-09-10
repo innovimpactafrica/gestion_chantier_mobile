@@ -3,8 +3,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
-import 'package:gestion_chantier/moa/bloc/auth/auth_bloc.dart';
-import 'package:gestion_chantier/moa/bloc/auth/auth_event.dart';
+import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
+import 'package:gestion_chantier/manager/bloc/auth/auth_event.dart';
+import 'package:gestion_chantier/manager/bloc/auth/auth_state.dart';
 import 'package:gestion_chantier/moa/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/moa/bloc/home/home_state.dart';
 import 'package:gestion_chantier/moa/bloc/home/home_event.dart';
@@ -315,21 +316,21 @@ class _ComptePageState extends State<ComptePage> {
   void _showLogoutConfirmDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (BuildContext context) {
+      builder: (BuildContext dialogContext) {
         return AlertDialog(
           title: const Text('Déconnexion'),
           content: const Text('Êtes-vous sûr de vouloir vous déconnecter?'),
           actions: <Widget>[
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
+                Navigator.of(dialogContext).pop();
               },
               child: const Text('Annuler'),
             ),
             TextButton(
               onPressed: () {
-                Navigator.of(context).pop();
-                // Déclencher l'événement de déconnexion
+                Navigator.of(dialogContext).pop();
+                // Déclencher l'événement de déconnexion en utilisant le contexte parent
                 context.read<AuthBloc>().add(AuthLogoutEvent());
 
                 ScaffoldMessenger.of(context).showSnackBar(

@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gestion_chantier/moa/bloc/study_requests/study_requests_bloc.dart';
+import 'package:gestion_chantier/moa/bloc/study_requests/study_requests_event.dart';
 import 'package:gestion_chantier/moa/models/RealEstateModel.dart';
 import 'package:gestion_chantier/moa/utils/HexColor.dart';
 
@@ -26,6 +29,7 @@ class ProjectDetailWidget extends StatefulWidget {
 
 class _ProjectDetailWidgetState extends State<ProjectDetailWidget> {
   int _selectedTabIndex = 0;
+  late StudyRequestsBloc _studyRequestsBloc;
 
   final List<Map<String, String>> tabs = [
     {'icon': 'assets/icons/hom.svg', 'label': 'À propos'},
@@ -36,17 +40,33 @@ class _ProjectDetailWidgetState extends State<ProjectDetailWidget> {
   ];
 
   @override
+  void initState() {
+    super.initState();
+    _studyRequestsBloc = StudyRequestsBloc()
+      ..add(LoadStudyRequests(propertyId: widget.projet.id));
+  }
+
+  @override
+  void dispose() {
+    _studyRequestsBloc.close();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CustomProjectAppBar(
-          title: widget.projet.name,
-          onBackPressed:
-              widget.onBackPressed ?? () => Navigator.of(context).pop(),
-        ),
-        _buildTabBar(),
-        Expanded(child: _buildTabContent()),
-      ],
+    return BlocProvider.value(
+      value: _studyRequestsBloc,
+      child: Column(
+        children: [
+          CustomProjectAppBar(
+            title: widget.projet.name,
+            onBackPressed:
+                widget.onBackPressed ?? () => Navigator.of(context).pop(),
+          ),
+          _buildTabBar(),
+          Expanded(child: _buildTabContent()),
+        ],
+      ),
     );
   }
 

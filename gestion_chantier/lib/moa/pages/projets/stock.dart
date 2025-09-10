@@ -103,7 +103,7 @@ class _StockPageState extends State<StockPage> {
       case 0:
         return InventairesTab(projet: widget.projet);
       case 1:
-        return CommandesTab(projet: widget.projet);
+        return CommandesTabWrapper(projet: widget.projet);
       case 2:
         return BlocProvider(
           create: (_) => DeliveryBloc(DeliveryRepository()),

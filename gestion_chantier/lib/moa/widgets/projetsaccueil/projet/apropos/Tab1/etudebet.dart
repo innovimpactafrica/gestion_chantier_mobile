@@ -1,24 +1,30 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gestion_chantier/moa/bloc/study_requests/study_requests_bloc.dart';
+import 'package:gestion_chantier/moa/bloc/study_requests/study_requests_event.dart';
+import 'package:gestion_chantier/moa/bloc/study_requests/study_requests_state.dart';
 import 'package:gestion_chantier/moa/models/RealEstateModel.dart';
+import 'package:gestion_chantier/moa/models/study_request.dart'
+    as request_models;
+import 'package:gestion_chantier/moa/models/Study.dart' as study_models;
 import 'package:gestion_chantier/moa/utils/HexColor.dart';
 import 'package:gestion_chantier/moa/widgets/CustomFloatingButton.dart';
+import 'package:gestion_chantier/moa/widgets/projetsaccueil/projet/apropos/Tab1/etude_detail_page.dart';
 
-enum StudyStatus { pending, inProgress, delivered, validated, rejected }
+class EtudeBetTabWrapper extends StatelessWidget {
+  final RealEstateModel projet;
+  const EtudeBetTabWrapper({super.key, required this.projet});
 
-class StudyItem {
-  final String title;
-  final DateTime createdAt;
-  final StudyStatus status;
-  final IconData icon;
-  final Color iconBg;
-
-  StudyItem({
-    required this.title,
-    required this.createdAt,
-    required this.status,
-    required this.icon,
-    required this.iconBg,
-  });
+  @override
+  Widget build(BuildContext context) {
+    return BlocProvider(
+      create:
+          (context) =>
+              StudyRequestsBloc()
+                ..add(LoadStudyRequests(propertyId: projet.id)),
+      child: EtudeBetTab(projet: projet),
+    );
+  }
 }
 
 class EtudeBetTab extends StatefulWidget {
@@ -30,69 +36,54 @@ class EtudeBetTab extends StatefulWidget {
   State<EtudeBetTab> createState() => _EtudeBetTabState();
 }
 
-class _EtudeBetTabState extends State<EtudeBetTab> {
-  StudyStatus? _filter; // null => Tous
-  late List<StudyItem> _items;
+class _EtudeBetTabState extends State<EtudeBetTab>
+    with AutomaticKeepAliveClientMixin {
+  String? _filter;
 
   @override
-  void initState() {
-    super.initState();
-    _items = [
-      StudyItem(
-        title: 'Étude structure – Immeuble A',
-        createdAt: DateTime(2025, 8, 12),
-        status: StudyStatus.pending,
-        icon: Icons.apartment_rounded,
-        iconBg: const Color(0xFFF3F4F6),
-      ),
-      StudyItem(
-        title: 'Étude acoustique —',
-        createdAt: DateTime(2025, 7, 27),
-        status: StudyStatus.inProgress,
-        icon: Icons.layers_rounded,
-        iconBg: const Color(0xFFFEF3C7),
-      ),
-      StudyItem(
-        title: 'Étude A (réseaux CVC)',
-        createdAt: DateTime(2025, 7, 5),
-        status: StudyStatus.delivered,
-        icon: Icons.ac_unit_rounded,
-        iconBg: const Color(0xFFEDE9FE),
-      ),
-      StudyItem(
-        title: 'Étude VRD – Centre commercial',
-        createdAt: DateTime(2025, 7, 5),
-        status: StudyStatus.validated,
-        icon: Icons.holiday_village_rounded,
-        iconBg: const Color(0xFFE8F5E9),
-      ),
-      StudyItem(
-        title: 'Étude CVC – Tour bureaux',
-        createdAt: DateTime(2025, 7, 5),
-        status: StudyStatus.rejected,
-        icon: Icons.ac_unit_rounded,
-        iconBg: const Color(0xFFFFEBEE),
-      ),
-    ];
-  }
+  bool get wantKeepAlive => true;
 
   @override
   Widget build(BuildContext context) {
-    final filtered =
-        _filter == null
-            ? _items
-            : _items.where((e) => e.status == _filter).toList();
-
+    super.build(context);
     return Scaffold(
       backgroundColor: HexColor('#F1F2F6'),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 16, 16, 90),
+      body: Padding(
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             _buildFilters(),
             const SizedBox(height: 12),
-            ...filtered.map(_buildStudyListItem),
+            Expanded(
+              child: BlocBuilder<StudyRequestsBloc, StudyRequestsState>(
+                builder: (context, state) {
+                  if (state is StudyRequestsLoading) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (state is StudyRequestsError) {
+                    return Center(child: Text(state.message));
+                  }
+                  if (state is StudyRequestsLoaded) {
+                    final filtered =
+                        _filter == null
+                            ? state.studyRequests
+                            : state.studyRequests
+                                .where((e) => e.status == _filter)
+                                .toList();
+
+                    return ListView.builder(
+                      padding: const EdgeInsets.only(bottom: 90),
+                      itemCount: filtered.length,
+                      itemBuilder: (context, index) {
+                        return _buildStudyRequestListItem(filtered[index]);
+                      },
+                    );
+                  }
+                  return Container();
+                },
+              ),
+            ),
           ],
         ),
       ),
@@ -108,21 +99,27 @@ class _EtudeBetTabState extends State<EtudeBetTab> {
   }
 
   Widget _buildFilters() {
-    Widget buildChip(String label, StudyStatus? status) {
+    Widget buildChip(String label, String? status) {
       final bool selected = _filter == status;
+      final Color statusColor =
+          status != null ? _statusColorFromString(status) : HexColor('#FF5C02');
+
       return GestureDetector(
         onTap: () => setState(() => _filter = status),
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
           margin: const EdgeInsets.only(right: 10),
           decoration: BoxDecoration(
-            color: selected ? HexColor('#FF5C02') : const Color(0xFFF1F5F9),
+            color: selected ? statusColor : const Color(0xFFF1F5F9),
             borderRadius: BorderRadius.circular(24),
           ),
           child: Text(
             label,
             style: TextStyle(
-              color: selected ? Colors.white : HexColor('#0F172A'),
+              color:
+                  selected
+                      ? Colors.white
+                      : (status != null ? statusColor : HexColor('#0F172A')),
               fontWeight: FontWeight.w600,
             ),
           ),
@@ -132,106 +129,175 @@ class _EtudeBetTabState extends State<EtudeBetTab> {
 
     final List<Map<String, String?>> labels = const [
       {'label': 'Tous', 'key': null},
-      {'label': 'En attente', 'key': 'pending'},
-      {'label': 'En cours', 'key': 'inProgress'},
-      {'label': 'Validées', 'key': 'validated'},
-      {'label': 'Rejetées', 'key': 'rejected'},
+      {'label': 'En attente', 'key': 'PENDING'},
+      {'label': 'En cours', 'key': 'IN_PROGRESS'},
+      {'label': 'Livrée', 'key': 'DELIVERED'},
+      {'label': 'Validées', 'key': 'VALIDATED'},
+      {'label': 'Rejetées', 'key': 'REJECTED'},
     ];
 
-    StudyStatus? _toStatus(String? key) {
-      switch (key) {
-        case 'pending':
-          return StudyStatus.pending;
-        case 'inProgress':
-          return StudyStatus.inProgress;
-        case 'validated':
-          return StudyStatus.validated;
-        case 'rejected':
-          return StudyStatus.rejected;
-        default:
-          return null;
-      }
-    }
-
-    return SizedBox(
-      height: 44,
-      child: ListView.separated(
-        scrollDirection: Axis.horizontal,
-        primary: false,
-        shrinkWrap: true,
-        physics: const BouncingScrollPhysics(),
-        padding: const EdgeInsets.symmetric(horizontal: 8),
-        itemCount: labels.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 6),
-        itemBuilder: (context, index) {
-          final label = labels[index]['label']!;
-          final key = labels[index]['key'];
-          final status = _toStatus(key);
-          return buildChip(label, status);
-        },
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      child: Row(
+        children:
+            labels.map((labelData) {
+              final label = labelData['label']!;
+              final key = labelData['key'];
+              return buildChip(label, key);
+            }).toList(),
       ),
     );
   }
 
-  Widget _buildStudyListItem(StudyItem item) {
-    final statusText = _statusText(item.status);
-    final statusColor = _statusColor(item.status);
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 56,
-            height: 56,
-            decoration: BoxDecoration(
-              color: item.iconBg,
-              borderRadius: BorderRadius.circular(12),
+  Widget _buildStudyRequestListItem(request_models.StudyRequest item) {
+    final statusText = _statusTextFromString(item.status);
+    final statusColor = _statusColorFromString(item.status);
+    return GestureDetector(
+      onTap: () => _navigateToStudyDetail(item),
+      child: Container(
+        margin: const EdgeInsets.only(bottom: 14),
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                color: Colors.grey[200],
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Icon(
+                Icons.description,
+                color: HexColor('#1F2937'),
+                size: 28,
+              ),
             ),
-            child: Icon(item.icon, color: HexColor('#1F2937'), size: 28),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  item.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: HexColor('#163B64'),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.title,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: HexColor('#163B64'),
+                    ),
                   ),
+                  const SizedBox(height: 6),
+                  Text(
+                    'Créé le ${_formatDate(item.createdAt)}.',
+                    style: TextStyle(fontSize: 14, color: HexColor('#64748B')),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 10),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(
+                color: statusColor,
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(
+                statusText,
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w700,
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  'Créé le ${_formatDate(item.createdAt)}.',
-                  style: TextStyle(fontSize: 14, color: HexColor('#64748B')),
-                ),
-              ],
+              ),
             ),
-          ),
-          const SizedBox(width: 10),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: statusColor.withOpacity(0.15),
-              borderRadius: BorderRadius.circular(20),
-            ),
-            child: Text(
-              statusText,
-              style: TextStyle(color: statusColor, fontWeight: FontWeight.w700),
-            ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
+  }
+
+  /// Navigate to study detail page
+  void _navigateToStudyDetail(request_models.StudyRequest studyRequest) {
+    // Convert StudyRequest to Study for the detail page
+    final study = _convertStudyRequestToStudy(studyRequest);
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => BlocProvider.value(
+          value: BlocProvider.of<StudyRequestsBloc>(context),
+          child: EtudeDetailPage(study: study),
+        ),
+      ),
+    );
+  }
+
+  /// Convert StudyRequest to Study model
+  study_models.Study _convertStudyRequestToStudy(
+    request_models.StudyRequest studyRequest,
+  ) {
+    // Convert status string to StudyStatus enum
+    study_models.StudyStatus status;
+    switch (studyRequest.status) {
+      case 'PENDING':
+        status = study_models.StudyStatus.pending;
+        break;
+      case 'IN_PROGRESS':
+        status = study_models.StudyStatus.inProgress;
+        break;
+      case 'DELIVERED':
+        status = study_models.StudyStatus.delivered;
+        break;
+      case 'VALIDATED':
+        status = study_models.StudyStatus.validated;
+        break;
+      case 'REJECTED':
+        status = study_models.StudyStatus.rejected;
+        break;
+      default:
+        status = study_models.StudyStatus.pending;
+    }
+
+    // Convert reports from StudyRequest.Report to Study.Report
+    final convertedReports =
+        studyRequest.reports.map((report) {
+          return study_models.Report(
+            id: report.id.toString(),
+            title: report.title,
+            version: 'v${report.versionNumber}',
+            createdAt: report.submittedAt,
+            fileSize: _getFormattedFileSize(
+              report.fileUrl,
+            ), // Estimate file size
+            fileUrl: report.fileUrl,
+            mimeType: 'application/pdf', // Default to PDF
+            studyId: studyRequest.id.toString(),
+          );
+        }).toList();
+
+    return study_models.Study(
+      id: studyRequest.id.toString(),
+      title: studyRequest.title,
+      description: studyRequest.description,
+      type:
+          study_models
+              .StudyType
+              .structure, // Default type, can be enhanced later
+      status: status,
+      createdAt: studyRequest.createdAt,
+      assignedTo: studyRequest.betName,
+      reports: convertedReports,
+      projectId: studyRequest.propertyId.toString(),
+    );
+  }
+
+  /// Get formatted file size (estimated)
+  String _getFormattedFileSize(String fileUrl) {
+    // This is a placeholder - in real app, you'd get actual file size
+    return '2.1 MB';
   }
 
   String _formatDate(DateTime d) {
@@ -253,33 +319,37 @@ class _EtudeBetTabState extends State<EtudeBetTab> {
     return '${d.day.toString().padLeft(2, '0')} ${months[d.month]}';
   }
 
-  String _statusText(StudyStatus s) {
-    switch (s) {
-      case StudyStatus.pending:
+  String _statusTextFromString(String status) {
+    switch (status) {
+      case 'PENDING':
         return 'En attente';
-      case StudyStatus.inProgress:
+      case 'IN_PROGRESS':
         return 'En cours';
-      case StudyStatus.delivered:
-        return 'Livrée';
-      case StudyStatus.validated:
+      case 'VALIDATED':
         return 'Validée';
-      case StudyStatus.rejected:
+      case 'REJECTED':
         return 'Rejetée';
+      case 'DELIVERED':
+        return 'Livrée';
+      default:
+        return status;
     }
   }
 
-  Color _statusColor(StudyStatus s) {
-    switch (s) {
-      case StudyStatus.pending:
+  Color _statusColorFromString(String status) {
+    switch (status) {
+      case 'PENDING':
         return HexColor('#1F2937');
-      case StudyStatus.inProgress:
+      case 'IN_PROGRESS':
         return HexColor('#E3A008');
-      case StudyStatus.delivered:
-        return HexColor('#6366F1');
-      case StudyStatus.validated:
+      case 'VALIDATED':
         return HexColor('#22C55E');
-      case StudyStatus.rejected:
+      case 'REJECTED':
         return HexColor('#EF4444');
+      case 'DELIVERED':
+        return HexColor('#6366F1');
+      default:
+        return Colors.grey;
     }
   }
 }

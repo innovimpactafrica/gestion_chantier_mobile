@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
 import 'package:gestion_chantier/moa/bloc/budget/budget_bloc.dart';
 import 'package:gestion_chantier/moa/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/moa/utils/HexColor.dart';
@@ -27,6 +28,8 @@ class _MainScreenState extends State<MainScreen> {
       providers: [
         // Vos autres blocs existants
         BlocProvider<HomeBloc>.value(value: BlocProvider.of<HomeBloc>(context)),
+        // AuthBloc depuis le contexte parent
+        BlocProvider<AuthBloc>.value(value: BlocProvider.of<AuthBloc>(context)),
         // Nouveau BudgetBloc
         BlocProvider<BudgetBloc>(create: (context) => BudgetBloc()),
       ],

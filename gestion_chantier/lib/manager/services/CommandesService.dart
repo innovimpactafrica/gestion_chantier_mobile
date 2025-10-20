@@ -274,7 +274,6 @@ class CommandeService {
       case DioExceptionType.badCertificate:
         return 'Problème de certificat SSL';
       case DioExceptionType.unknown:
-      default:
         return 'Erreur réseau inconnue: ${e.message ?? 'Aucun détail disponible'}';
     }
   }
@@ -291,22 +290,6 @@ class CommandeService {
       print('Connection test failed: $e');
       return false;
     }
-  }
-
-  /// Méthode utilitaire pour valider les données avant envoi
-  bool _validateOrderData({
-    required int supplierId,
-    required List<MaterialModel> materials,
-  }) {
-    if (supplierId <= 0) {
-      throw Exception('ID sous-traitant invalide');
-    }
-
-    if (materials.isEmpty) {
-      throw Exception('La liste des matériaux ne peut pas être vide');
-    }
-
-    return true;
   }
 
   Future<List<DeliveryModel>> fetchDeliveries(

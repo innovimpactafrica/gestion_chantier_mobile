@@ -80,6 +80,7 @@ class _DocumentSearchPageState extends State<DocumentSearchPage> {
                       return ListTile(
                         title: Text(doc.title),
                         subtitle:
+                            // ignore: unnecessary_null_comparison
                             doc.description != null
                                 ? Text(doc.description)
                                 : null,

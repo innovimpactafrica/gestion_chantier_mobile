@@ -400,62 +400,6 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
         return const Color(0xFF6B7280); // Gris
     }
   }
-
-  String _getStatusText(TaskStatus status) {
-    switch (status) {
-      case TaskStatus.delayed:
-        return 'En retard';
-      case TaskStatus.urgent:
-        return 'Urgent';
-      case TaskStatus.upToDate:
-        return 'À jour';
-      case TaskStatus.todo:
-        return 'À faire';
-      case TaskStatus.inProgress:
-        return 'En cours';
-      case TaskStatus.done:
-        return 'Terminé';
-    }
-  }
-
-  Color _getPriorityColor(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return const Color(0xFFDC2626); // Rouge
-      case TaskPriority.medium:
-        return const Color(0xFDF59E0B); // Orange
-      case TaskPriority.low:
-        return const Color(0xFF10B981); // Vert
-    }
-  }
-
-  String _getPriorityText(TaskPriority priority) {
-    switch (priority) {
-      case TaskPriority.high:
-        return 'Haute';
-      case TaskPriority.medium:
-        return 'Moyenne';
-      case TaskPriority.low:
-        return 'Faible';
-    }
-  }
-
-  String _getDateText(Task task) {
-    if (task.daysRemaining != null && task.daysRemaining! > 0) {
-      return 'Échéance : ${task.formattedDate} (${task.daysRemaining} j restants)';
-    } else {
-      final now = DateTime.now();
-      final difference = task.endDate.difference(now).inDays;
-
-      if (difference == 0) {
-        return 'Échéance : ${task.formattedDate} (Aujourd\'hui)';
-      } else if (difference < 0) {
-        return 'Échéance : ${task.formattedDate} (${difference.abs()} j de retard)';
-      } else {
-        return 'Échéance : ${task.formattedDate}';
-      }
-    }
-  }
 }
 
 class ConnectingLinesPainter extends CustomPainter {

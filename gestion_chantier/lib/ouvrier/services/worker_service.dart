@@ -2,11 +2,9 @@ import 'package:gestion_chantier/manager/services/api_service.dart';
 import '../models/worker_dashboard_model.dart';
 import '../models/MonthlySummaryModel.dart';
 import '../models/PresenceHistoryModel.dart';
-import 'location_service.dart';
 
 class WorkerService {
   final ApiService _apiService = ApiService();
-  final LocationService _locationService = LocationService();
 
   Future<WorkerDashboardModel> fetchWorkerDashboard(int workerId) async {
     try {
@@ -58,7 +56,12 @@ class WorkerService {
     return PresenceHistoryModel.fromJson(response.data);
   }
 
-  Future<String> checkInOut(int workerId, {String? qrCodeText, double? latitude, double? longitude}) async {
+  Future<String> checkInOut(
+    int workerId, {
+    String? qrCodeText,
+    double? latitude,
+    double? longitude,
+  }) async {
     try {
       // Construire l'URL avec les paramètres
       String url = '/workers/$workerId/check';

@@ -56,7 +56,7 @@ class _AddSignalementModalState extends State<AddSignalementModal> {
   Future<void> _selectFile() async {
     final picker = ImagePicker();
     final picked = await picker.pickMultiImage();
-    if (picked != null && picked.isNotEmpty) {
+    if (picked.isNotEmpty) {
       List<File> compressed = [];
       for (final x in picked) {
         final file = File(x.path);

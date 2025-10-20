@@ -21,7 +21,7 @@ class MaterialsApiService {
       }
     } on DioException catch (e) {
       return _handleDioException(e, 'chargement des matériaux');
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Erreur inattendue: $e');
     }
   }
@@ -69,7 +69,7 @@ class MaterialsApiService {
 
       // Cas 3: Type de données inattendu
       return [];
-    } catch (e, stackTrace) {
+    } catch (e) {
       return [];
     }
   }
@@ -132,7 +132,7 @@ class MaterialsApiService {
         print('Response: ${e.response?.data}');
       }
       throw Exception('Erreur réseau lors de l\'ajout: ${e.message}');
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Erreur inattendue lors de l\'ajout: $e');
     }
   }
@@ -161,7 +161,7 @@ class MaterialsApiService {
         print('Response: ${e.response?.data}');
       }
       throw Exception('Erreur réseau lors de la mise à jour: ${e.message}');
-    } catch (e, stackTrace) {
+    } catch (e) {
       throw Exception('Erreur inattendue lors de la mise à jour: $e');
     }
   }
@@ -193,11 +193,7 @@ class MaterialsApiService {
 
         map.forEach((key, value) {
           if (value != null) {
-            final valueStr = value.toString();
-            final truncatedValue =
-                valueStr.length > 100
-                    ? '${valueStr.substring(0, 100)}...'
-                    : valueStr;
+            value.toString();
           } else {}
         });
       } else if (response.data is List) {
@@ -205,7 +201,7 @@ class MaterialsApiService {
 
         if (list.isNotEmpty) {}
       }
-    } catch (e, stackTrace) {}
+    } catch (e) {}
   }
 
   /// Ajoute un nouveau matériau à l'inventaire

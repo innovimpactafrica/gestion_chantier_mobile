@@ -16,8 +16,6 @@ class IncidentsListWidget extends StatefulWidget {
 }
 
 class _IncidentsListWidgetState extends State<IncidentsListWidget> {
-  final IncidentService _incidentService = IncidentService();
-
   @override
   void initState() {
     super.initState();

@@ -1,27 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gestion_chantier/manager/pages/auth/signin.dart';
-import 'package:gestion_chantier/manager/utils/HexColor.dart';
-import 'package:gestion_chantier/manager/widgets/navitems.dart';
+import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart';
+import 'package:gestion_chantier/shared/utils/HexColor.dart';
+import 'package:gestion_chantier/shared/services/routing_service.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_event.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_state.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_event.dart';
-import 'package:gestion_chantier/ouvrier/pages/ouvrier_main_screen.dart';
-import 'package:gestion_chantier/moa/widgets/navitems.dart' as moa;
-import 'package:gestion_chantier/moa/bloc/auth/auth_bloc.dart' as moa_auth;
-import 'package:gestion_chantier/moa/bloc/home/home_bloc.dart' as moahome;
-import 'package:gestion_chantier/moa/bloc/home/home_event.dart'
-    as moahome_event;
-import 'package:gestion_chantier/moa/repository/auth_repository.dart'
-    as moarepo;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
   @override
-  _LoginScreenState createState() => _LoginScreenState();
+  State<LoginScreen> createState() => _LoginScreenState();
 }
 
 class _LoginScreenState extends State<LoginScreen> {
@@ -60,47 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
                           Navigator.of(context).pop();
                           // Rafraîchir l'utilisateur courant dans le HomeBloc
                           context.read<HomeBloc>().add(LoadCurrentUserEvent());
-                          // Redirection selon le profil
-                          final profil = state.user.profil.toLowerCase();
-                          if (profil == 'worker' || profil == 'ouvrier') {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const OuvrierMainScreen(),
-                              ),
-                            );
-                          } else if (profil == 'moa') {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => MultiBlocProvider(
-                                      providers: [
-                                        BlocProvider<moa_auth.AuthBloc>(
-                                          create: (_) => moa_auth.AuthBloc(),
-                                        ),
-                                        BlocProvider<moahome.HomeBloc>(
-                                          create:
-                                              (_) => moahome.HomeBloc(
-                                                authRepository:
-                                                    moarepo.AuthRepository(),
-                                              )..add(
-                                                moahome_event.LoadCurrentUserEvent(),
-                                              ),
-                                        ),
-                                      ],
-                                      child: const moa.MainScreen(),
-                                    ),
-                              ),
-                            );
-                          } else {
-                            Navigator.pushReplacement(
-                              context,
-                              MaterialPageRoute(
-                                builder: (context) => const MainScreen(),
-                              ),
-                            );
-                          }
+                          // Utiliser le service de routage centralisé
+                          RoutingService.routeByProfile(
+                            context,
+                            state.user.profil,
+                          );
                         },
                         child: Text('Continuer'),
                       ),
@@ -534,7 +490,16 @@ class _LoginScreenState extends State<LoginScreen> {
                                       Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder: (context) => SignupScreen(),
+                                          builder:
+                                              (context) => UnifiedSignupScreen(
+                                                authBlocFactory:
+                                                    (context) => BlocProvider(
+                                                      create:
+                                                          (context) =>
+                                                              AuthBloc(),
+                                                      child: const SizedBox(),
+                                                    ),
+                                              ),
                                         ),
                                       );
                                     },

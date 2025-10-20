@@ -1,16 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gestion_chantier/moa/pages/auth/signin.dart';
-import 'package:gestion_chantier/moa/utils/HexColor.dart';
-import 'package:gestion_chantier/moa/widgets/navitems.dart' show MainScreen;
+import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart';
+import 'package:gestion_chantier/shared/utils/HexColor.dart';
+import 'package:gestion_chantier/shared/services/routing_service.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_event.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_state.dart';
-import 'package:gestion_chantier/moa/bloc/auth/auth_bloc.dart' as moa_auth;
 import 'package:gestion_chantier/moa/bloc/home/home_bloc.dart' as moahome;
-import 'package:gestion_chantier/moa/bloc/home/home_event.dart' as moahome_event;
-import 'package:gestion_chantier/moa/repository/auth_repository.dart' as moarepo;
-import 'package:gestion_chantier/ouvrier/pages/ouvrier_main_screen.dart';
+import 'package:gestion_chantier/moa/bloc/home/home_event.dart'
+    as moahome_event;
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -33,73 +31,43 @@ class _LoginScreenState extends State<LoginScreen> {
           // Connexion réussie - afficher les infos utilisateur
           showDialog(
             context: context,
-            builder: (context) => AlertDialog(
-              title: const Text('Bienvenue !'),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Nom : ${state.user.nom}'),
-                  Text('Prénom : ${state.user.prenom}'),
-                  Text('Email : ${state.user.email}'),
-                  Text('Profil : ${state.user.profil}'),
-                  Text('Téléphone : ${state.user.telephone}'),
-                ],
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    // Rafraîchir l'utilisateur courant dans le HomeBloc global
-                    try {
-                      context.read<moahome.HomeBloc>().add(moahome_event.LoadCurrentUserEvent());
-                    } catch (e) {
-                      // HomeBloc n'est pas disponible, on continue sans
-                      debugPrint('HomeBloc not available: $e');
-                    }
-                    // Redirection selon le profil
-                    final profil = state.user.profil.toLowerCase();
-                    if (profil == 'worker' || profil == 'ouvrier') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const OuvrierMainScreen(),
-                        ),
-                      );
-                    } else if (profil == 'moa') {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => MultiBlocProvider(
-                            providers: [
-                              BlocProvider<moa_auth.AuthBloc>(
-                                create: (_) => moa_auth.AuthBloc(),
-                              ),
-                              BlocProvider<moahome.HomeBloc>(
-                                create: (_) => moahome.HomeBloc(
-                                  authRepository: moarepo.AuthRepository(),
-                                )..add(
-                                    moahome_event.LoadCurrentUserEvent(),
-                                  ),
-                              ),
-                            ],
-                            child: const MainScreen(),
-                          ),
-                        ),
-                      );
-                    } else {
-                      Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => const MainScreen(),
-                        ),
-                      );
-                    }
-                  },
-                  child: const Text('Continuer'),
+            builder:
+                (context) => AlertDialog(
+                  title: const Text('Bienvenue !'),
+                  content: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text('Nom : ${state.user.nom}'),
+                      Text('Prénom : ${state.user.prenom}'),
+                      Text('Email : ${state.user.email}'),
+                      Text('Profil : ${state.user.profil}'),
+                      Text('Téléphone : ${state.user.telephone}'),
+                    ],
+                  ),
+                  actions: [
+                    TextButton(
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                        // Rafraîchir l'utilisateur courant dans le HomeBloc global
+                        try {
+                          context.read<moahome.HomeBloc>().add(
+                            moahome_event.LoadCurrentUserEvent(),
+                          );
+                        } catch (e) {
+                          // HomeBloc n'est pas disponible, on continue sans
+                          debugPrint('HomeBloc not available: $e');
+                        }
+                        // Utiliser le service de routage centralisé
+                        RoutingService.routeByProfile(
+                          context,
+                          state.user.profil,
+                        );
+                      },
+                      child: const Text('Continuer'),
+                    ),
+                  ],
                 ),
-              ],
-            ),
           );
           // Ne pas rediriger tout de suite, attendre la fermeture du dialog
           return;
@@ -143,7 +111,10 @@ class _LoginScreenState extends State<LoginScreen> {
           body: Form(
             key: _formKey,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24.0,
+                vertical: 10,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -295,18 +266,20 @@ class _LoginScreenState extends State<LoginScreen> {
                   Container(
                     padding: const EdgeInsets.only(left: 199),
                     child: GestureDetector(
-                      onTap: state is AuthLoadingState
-                          ? null
-                          : () {
-                              _showForgotPasswordDialog(context);
-                            },
+                      onTap:
+                          state is AuthLoadingState
+                              ? null
+                              : () {
+                                _showForgotPasswordDialog(context);
+                              },
                       child: Text(
                         'Mot de passe oublié ?',
                         textAlign: TextAlign.right,
                         style: TextStyle(
-                          color: state is AuthLoadingState
-                              ? Colors.grey
-                              : HexColor('#FF5C02'),
+                          color:
+                              state is AuthLoadingState
+                                  ? Colors.grey
+                                  : HexColor('#FF5C02'),
                           fontSize: 14,
                           fontFamily: 'Inter',
                           fontWeight: FontWeight.w600,
@@ -324,48 +297,51 @@ class _LoginScreenState extends State<LoginScreen> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: state is AuthLoadingState
-                          ? null
-                          : () {
-                              if (_formKey.currentState!.validate()) {
-                                // Déclencher l'événement de connexion
-                                BlocProvider.of<AuthBloc>(context).add(
-                                  AuthLoginEvent(
-                                    email: _emailController.text.trim(),
-                                    password: _passwordController.text,
-                                  ),
-                                );
-                              }
-                            },
+                      onPressed:
+                          state is AuthLoadingState
+                              ? null
+                              : () {
+                                if (_formKey.currentState!.validate()) {
+                                  // Déclencher l'événement de connexion
+                                  BlocProvider.of<AuthBloc>(context).add(
+                                    AuthLoginEvent(
+                                      email: _emailController.text.trim(),
+                                      password: _passwordController.text,
+                                    ),
+                                  );
+                                }
+                              },
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: state is AuthLoadingState
-                            ? Colors.grey[400]
-                            : HexColor('#FF5C02'),
+                        backgroundColor:
+                            state is AuthLoadingState
+                                ? Colors.grey[400]
+                                : HexColor('#FF5C02'),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(10),
                         ),
                         elevation: 0,
                       ),
-                      child: state is AuthLoadingState
-                          ? const SizedBox(
-                              width: 20,
-                              height: 20,
-                              child: CircularProgressIndicator(
-                                valueColor: AlwaysStoppedAnimation<Color>(
-                                  Colors.white,
+                      child:
+                          state is AuthLoadingState
+                              ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    Colors.white,
+                                  ),
+                                  strokeWidth: 2,
                                 ),
-                                strokeWidth: 2,
+                              )
+                              : const Text(
+                                'Se Connecter',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.white,
+                                ),
                               ),
-                            )
-                          : const Text(
-                              'Se Connecter',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white,
-                              ),
-                            ),
                     ),
                   ),
 
@@ -379,10 +355,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         padding: EdgeInsets.symmetric(horizontal: 16),
                         child: Text(
                           'Ou',
-                          style: TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
+                          style: TextStyle(color: Colors.grey, fontSize: 12),
                         ),
                       ),
                       Expanded(child: Divider(color: Colors.grey[300])),
@@ -398,16 +371,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: SizedBox(
                           height: 42,
                           child: OutlinedButton(
-                            onPressed: state is AuthLoadingState
-                                ? null
-                                : () {
-                                    _showSocialLoginNotImplemented('Google');
-                                  },
+                            onPressed:
+                                state is AuthLoadingState
+                                    ? null
+                                    : () {
+                                      _showSocialLoginNotImplemented('Google');
+                                    },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: state is AuthLoadingState
-                                    ? Colors.grey[400]!
-                                    : Colors.grey[300]!,
+                                color:
+                                    state is AuthLoadingState
+                                        ? Colors.grey[400]!
+                                        : Colors.grey[300]!,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -418,18 +393,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Icon(
                                   Icons.g_mobiledata_outlined,
-                                  color: state is AuthLoadingState
-                                      ? Colors.grey[400]
-                                      : Colors.black,
+                                  color:
+                                      state is AuthLoadingState
+                                          ? Colors.grey[400]
+                                          : Colors.black,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
                                   'Google',
                                   style: TextStyle(
-                                    color: state is AuthLoadingState
-                                        ? Colors.grey[400]
-                                        : Colors.black,
+                                    color:
+                                        state is AuthLoadingState
+                                            ? Colors.grey[400]
+                                            : Colors.black,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -446,16 +423,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         child: SizedBox(
                           height: 42,
                           child: OutlinedButton(
-                            onPressed: state is AuthLoadingState
-                                ? null
-                                : () {
-                                    _showSocialLoginNotImplemented('Apple');
-                                  },
+                            onPressed:
+                                state is AuthLoadingState
+                                    ? null
+                                    : () {
+                                      _showSocialLoginNotImplemented('Apple');
+                                    },
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: state is AuthLoadingState
-                                    ? Colors.grey[400]!
-                                    : Colors.grey[300]!,
+                                color:
+                                    state is AuthLoadingState
+                                        ? Colors.grey[400]!
+                                        : Colors.grey[300]!,
                               ),
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(10),
@@ -466,18 +445,20 @@ class _LoginScreenState extends State<LoginScreen> {
                               children: [
                                 Icon(
                                   Icons.apple,
-                                  color: state is AuthLoadingState
-                                      ? Colors.grey[400]
-                                      : Colors.black,
+                                  color:
+                                      state is AuthLoadingState
+                                          ? Colors.grey[400]
+                                          : Colors.black,
                                   size: 20,
                                 ),
                                 const SizedBox(width: 12),
                                 Text(
                                   'Apple',
                                   style: TextStyle(
-                                    color: state is AuthLoadingState
-                                        ? Colors.grey[400]
-                                        : Colors.black,
+                                    color:
+                                        state is AuthLoadingState
+                                            ? Colors.grey[400]
+                                            : Colors.black,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w600,
                                   ),
@@ -506,22 +487,32 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                         GestureDetector(
-                          onTap: state is AuthLoadingState
-                              ? null
-                              : () {
-                                  Navigator.push(
-                                    context,
-                                    MaterialPageRoute(
-                                      builder: (context) => const SignupScreen(),
-                                    ),
-                                  );
-                                },
+                          onTap:
+                              state is AuthLoadingState
+                                  ? null
+                                  : () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder:
+                                            (context) => UnifiedSignupScreen(
+                                              authBlocFactory:
+                                                  (context) => BlocProvider(
+                                                    create:
+                                                        (context) => AuthBloc(),
+                                                    child: const SizedBox(),
+                                                  ),
+                                            ),
+                                      ),
+                                    );
+                                  },
                           child: Text(
                             'S\'inscrire',
                             style: TextStyle(
-                              color: state is AuthLoadingState
-                                  ? Colors.grey
-                                  : HexColor('#FF5C02'),
+                              color:
+                                  state is AuthLoadingState
+                                      ? Colors.grey
+                                      : HexColor('#FF5C02'),
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
                             ),
@@ -602,50 +593,56 @@ class _LoginScreenState extends State<LoginScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: state is AuthLoadingState
-                      ? null
-                      : () => Navigator.of(dialogContext).pop(),
+                  onPressed:
+                      state is AuthLoadingState
+                          ? null
+                          : () => Navigator.of(dialogContext).pop(),
                   child: Text(
                     'Annuler',
                     style: TextStyle(
-                      color: state is AuthLoadingState
-                          ? Colors.grey
-                          : Colors.grey[700],
+                      color:
+                          state is AuthLoadingState
+                              ? Colors.grey
+                              : Colors.grey[700],
                     ),
                   ),
                 ),
                 ElevatedButton(
-                  onPressed: state is AuthLoadingState
-                      ? null
-                      : () {
-                          if (forgotPasswordFormKey.currentState!.validate()) {
-                            BlocProvider.of<AuthBloc>(context).add(
-                              AuthForgotPasswordEvent(
-                                email: emailController.text.trim(),
-                              ),
-                            );
-                          }
-                        },
+                  onPressed:
+                      state is AuthLoadingState
+                          ? null
+                          : () {
+                            if (forgotPasswordFormKey.currentState!
+                                .validate()) {
+                              BlocProvider.of<AuthBloc>(context).add(
+                                AuthForgotPasswordEvent(
+                                  email: emailController.text.trim(),
+                                ),
+                              );
+                            }
+                          },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: state is AuthLoadingState
-                        ? Colors.grey[400]
-                        : HexColor('#FF5C02'),
+                    backgroundColor:
+                        state is AuthLoadingState
+                            ? Colors.grey[400]
+                            : HexColor('#FF5C02'),
                   ),
-                  child: state is AuthLoadingState
-                      ? const SizedBox(
-                          width: 16,
-                          height: 16,
-                          child: CircularProgressIndicator(
-                            valueColor: AlwaysStoppedAnimation<Color>(
-                              Colors.white,
+                  child:
+                      state is AuthLoadingState
+                          ? const SizedBox(
+                            width: 16,
+                            height: 16,
+                            child: CircularProgressIndicator(
+                              valueColor: AlwaysStoppedAnimation<Color>(
+                                Colors.white,
+                              ),
+                              strokeWidth: 2,
                             ),
-                            strokeWidth: 2,
+                          )
+                          : const Text(
+                            'Envoyer',
+                            style: TextStyle(color: Colors.white),
                           ),
-                        )
-                      : const Text(
-                          'Envoyer',
-                          style: TextStyle(color: Colors.white),
-                        ),
                 ),
               ],
             );

@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"name": "gestion_chantier_mobile",
+			"path": "../../../.."
+		},
+		{
+			"name": "gestion_chantier",
+			"path": "../../../../../gestion_chantier"
+		}
+	],
+	"settings": {}
+}

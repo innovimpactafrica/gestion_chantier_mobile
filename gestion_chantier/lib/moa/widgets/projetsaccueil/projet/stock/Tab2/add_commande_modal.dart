@@ -54,7 +54,6 @@ class _AjouterCommandeModalContentState
   final _formKey = GlobalKey<FormState>();
   bool _isLoading = false;
   List<WorkerModel> fournisseurs = [];
-  bool _isLoadingFournisseurs = true;
   List<MaterialModel> materialsFromApi = [];
   bool _isLoadingMaterials = true;
   String? currentUserNom;

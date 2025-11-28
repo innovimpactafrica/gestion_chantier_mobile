@@ -303,7 +303,7 @@ class _CommandesTabState extends State<CommandesTab> {
         color: HexColor('#777777'),
       ),
       title: 'CMD-${commande.id.toString().padLeft(6, '0')}',
-      subtitle: commande.supplier.nom ?? 'Fournisseur inconnu',
+      subtitle: commande.supplier.nom,
       statut: _mapStatusToEnum(commande.status),
       hasSwitch: false,
       hasArrow: true,
@@ -646,7 +646,7 @@ class _CommandeDetailModal extends StatelessWidget {
                   style: TextStyle(color: Colors.grey[600], fontSize: 15),
                 ),
                 Text(
-                  commande.supplier.nom ?? '-',
+                  commande.supplier.nom,
                   style: TextStyle(fontWeight: FontWeight.w500, fontSize: 15),
                 ),
               ],

@@ -64,23 +64,33 @@ class _EtudeBetTabState extends State<EtudeBetTab>
                   if (state is StudyRequestsError) {
                     return Center(child: Text(state.message));
                   }
+                  
+                  // Gérer les deux cas : StudyRequestsLoaded et StudyCommentsLoaded (qui peut contenir les études)
+                  List<request_models.StudyRequest> studyRequests;
                   if (state is StudyRequestsLoaded) {
-                    final filtered =
-                        _filter == null
-                            ? state.studyRequests
-                            : state.studyRequests
-                                .where((e) => e.status == _filter)
-                                .toList();
-
-                    return ListView.builder(
-                      padding: const EdgeInsets.only(bottom: 90),
-                      itemCount: filtered.length,
-                      itemBuilder: (context, index) {
-                        return _buildStudyRequestListItem(filtered[index]);
-                      },
-                    );
+                    studyRequests = state.studyRequests;
+                  } else if (state is StudyCommentsLoaded && state.studyRequests != null) {
+                    studyRequests = state.studyRequests!;
+                  } else {
+                    return Container();
                   }
-                  return Container();
+                  
+                  // Quand "Tous" est sélectionné (_filter == null), afficher toutes les études
+                  // y compris celles avec le statut "DELIVERED" (Livrée)
+                  final filtered =
+                      _filter == null
+                          ? studyRequests // Afficher toutes les études (y compris DELIVERED)
+                          : studyRequests
+                              .where((e) => e.status == _filter)
+                              .toList();
+
+                  return ListView.builder(
+                    padding: const EdgeInsets.only(bottom: 90),
+                    itemCount: filtered.length,
+                    itemBuilder: (context, index) {
+                      return _buildStudyRequestListItem(filtered[index]);
+                    },
+                  );
                 },
               ),
             ),
@@ -101,37 +111,43 @@ class _EtudeBetTabState extends State<EtudeBetTab>
   Widget _buildFilters() {
     Widget buildChip(String label, String? status) {
       final bool selected = _filter == status;
-      final Color statusColor =
-          status != null ? _statusColorFromString(status) : HexColor('#FF5C02');
+      final Color selectedColor = HexColor('#FF5C02');
 
       return GestureDetector(
         onTap: () => setState(() => _filter = status),
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 9),
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           margin: const EdgeInsets.only(right: 10),
           decoration: BoxDecoration(
-            color: selected ? statusColor : const Color(0xFFF1F5F9),
+            color: selected ? selectedColor : Colors.white,
             borderRadius: BorderRadius.circular(24),
+            boxShadow: selected
+                ? []
+                : [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
           ),
           child: Text(
             label,
             style: TextStyle(
-              color:
-                  selected
-                      ? Colors.white
-                      : (status != null ? statusColor : HexColor('#0F172A')),
+              color: selected ? Colors.white : const Color(0xFF1F2937),
               fontWeight: FontWeight.w600,
+              fontSize: 14,
             ),
           ),
         ),
       );
     }
 
+    // Retirer "Livrée" de la liste des filtres affichés
     final List<Map<String, String?>> labels = const [
       {'label': 'Tous', 'key': null},
       {'label': 'En attente', 'key': 'PENDING'},
       {'label': 'En cours', 'key': 'IN_PROGRESS'},
-      {'label': 'Livrée', 'key': 'DELIVERED'},
       {'label': 'Validées', 'key': 'VALIDATED'},
       {'label': 'Rejetées', 'key': 'REJECTED'},
     ];
@@ -222,17 +238,25 @@ class _EtudeBetTabState extends State<EtudeBetTab>
   }
 
   /// Navigate to study detail page
-  void _navigateToStudyDetail(request_models.StudyRequest studyRequest) {
+  void _navigateToStudyDetail(request_models.StudyRequest studyRequest) async {
     // Convert StudyRequest to Study for the detail page
     final study = _convertStudyRequestToStudy(studyRequest);
-    Navigator.of(context).push(
+    await Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => BlocProvider.value(
-          value: BlocProvider.of<StudyRequestsBloc>(context),
-          child: EtudeDetailPage(study: study),
-        ),
+        builder: (_) => EtudeDetailPage(study: study),
       ),
     );
+    
+    // Si on revient de la page de détails, s'assurer que les études sont toujours chargées
+    if (mounted) {
+      final currentState = context.read<StudyRequestsBloc>().state;
+      if (currentState is StudyCommentsLoaded && currentState.studyRequests == null) {
+        // Recharger les études si elles ont été perdues
+        context.read<StudyRequestsBloc>().add(
+          LoadStudyRequests(propertyId: widget.projet.id),
+        );
+      }
+    }
   }
 
   /// Convert StudyRequest to Study model

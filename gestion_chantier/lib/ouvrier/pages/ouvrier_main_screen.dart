@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import '../widgets/navitems_ouvrier.dart';
+import '../bloc/auth/auth_bloc.dart';
 import 'accueil_page.dart';
 import 'taches_page.dart';
 import 'pointage_page.dart';
@@ -30,16 +32,19 @@ class OuvrierMainScreenState extends State<OuvrierMainScreen> {
       const MonCompteOuvrierPage(),
     ];
 
-    return Scaffold(
-      body: pages[selectedIndex],
-      backgroundColor: const Color(0xFFF5F7FA),
-      bottomNavigationBar: OuvrierBottomNavigationBar(
-        selectedIndex: selectedIndex,
-        onItemTapped: (index) {
-          setState(() {
-            selectedIndex = index;
-          });
-        },
+    return BlocProvider(
+      create: (context) => AuthBloc(),
+      child: Scaffold(
+        body: pages[selectedIndex],
+        backgroundColor: const Color(0xFFF5F7FA),
+        bottomNavigationBar: OuvrierBottomNavigationBar(
+          selectedIndex: selectedIndex,
+          onItemTapped: (index) {
+            setState(() {
+              selectedIndex = index;
+            });
+          },
+        ),
       ),
     );
   }

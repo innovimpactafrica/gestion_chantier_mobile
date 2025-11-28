@@ -8,6 +8,7 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
 
   HomeBloc({required this.authRepository}) : super(HomeState()) {
     on<LoadCurrentUserEvent>(_onLoadCurrentUser);
+    on<ClearUserEvent>(_onClearUser);
   }
 
   Future<void> _onLoadCurrentUser(
@@ -21,5 +22,16 @@ class HomeBloc extends Bloc<HomeEvent, HomeState> {
     } catch (e) {
       emit(state.copyWith(isLoading: false, errorMessage: e.toString()));
     }
+  }
+
+  void _onClearUser(
+    ClearUserEvent event,
+    Emitter<HomeState> emit,
+  ) {
+    emit(state.copyWith(
+      currentUser: null,
+      isAuthenticated: false,
+      errorMessage: null,
+    ));
   }
 }

@@ -19,10 +19,15 @@ class StudyRequestsError extends StudyRequestsState {
   StudyRequestsError({required this.message});
 }
 
-class StudyCommentsLoading extends StudyRequestsState {}
+class StudyCommentsLoading extends StudyRequestsState {
+  final List<StudyRequest>? studyRequests;
+
+  StudyCommentsLoading({this.studyRequests});
+}
 
 class StudyCommentsLoaded extends StudyRequestsState {
   final List<StudyComment> comments;
+  final List<StudyRequest>? studyRequests;
 
-  StudyCommentsLoaded({required this.comments});
+  StudyCommentsLoaded({required this.comments, this.studyRequests});
 }

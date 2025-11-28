@@ -11,3 +11,10 @@ class LoadStudyComments extends StudyRequestsEvent {
 
   LoadStudyComments({required this.studyRequestId});
 }
+
+class AddStudyComment extends StudyRequestsEvent {
+  final int studyRequestId;
+  final String content;
+
+  AddStudyComment({required this.studyRequestId, required this.content});
+}

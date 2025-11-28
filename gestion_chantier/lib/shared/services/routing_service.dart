@@ -30,6 +30,10 @@ import 'package:gestion_chantier/fournisseur/bloc/home/home_event.dart'
 import 'package:gestion_chantier/fournisseur/repository/auth_repository.dart'
     as fournisseur_repo;
 
+import 'package:gestion_chantier/bet/widgets/navitems.dart' as bet;
+import 'package:gestion_chantier/bet/bloc/home/home_bloc.dart' as bet_home;
+import 'package:gestion_chantier/bet/bloc/home/home_event.dart' as bet_event;
+
 import 'package:gestion_chantier/ouvrier/pages/ouvrier_main_screen.dart';
 
 class RoutingService {
@@ -42,6 +46,8 @@ class RoutingService {
       _routeToMoa(context);
     } else if (profil == 'fournisseur') {
       _routeToFournisseur(context);
+    } else if (profil == 'bet') {
+      _routeToBet(context);
     } else {
       _routeToManager(context);
     }
@@ -95,6 +101,26 @@ class RoutingService {
                 ),
               ],
               child: const fournisseur.MainScreen(),
+            ),
+      ),
+    );
+  }
+
+  static void _routeToBet(BuildContext context) {
+    Navigator.pushReplacement(
+      context,
+      MaterialPageRoute(
+        builder:
+            (context) => MultiBlocProvider(
+              providers: [
+                BlocProvider<bet_home.BetHomeBloc>(
+                  create:
+                      (_) =>
+                          bet_home.BetHomeBloc()
+                            ..add(bet_event.LoadCurrentUserEvent()),
+                ),
+              ],
+              child: const bet.BetMainScreen(),
             ),
       ),
     );

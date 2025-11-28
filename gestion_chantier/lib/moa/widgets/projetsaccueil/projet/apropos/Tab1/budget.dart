@@ -346,11 +346,10 @@ class _BudgetTabState extends State<BudgetTab> {
 
           // Bouton modifier
           Container(
-            padding: const EdgeInsets.only(
-              left: 74,
-              right: 74,
-              top: 2,
-              bottom: 2,
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 2,
             ),
             decoration: BoxDecoration(
               color:
@@ -372,7 +371,7 @@ class _BudgetTabState extends State<BudgetTab> {
               child: Container(
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: Row(
-                  mainAxisSize: MainAxisSize.min,
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Icon(
                       Icons.edit_outlined,
@@ -381,15 +380,20 @@ class _BudgetTabState extends State<BudgetTab> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      _isProjectOwner
-                          ? 'Modifier le budget'
-                          : 'Seul le propriétaire peut modifier',
-                      style: TextStyle(
-                        color:
-                            _isProjectOwner ? HexColor('#FF5C02') : Colors.grey,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        _isProjectOwner
+                            ? 'Modifier le budget'
+                            : 'Seul le propriétaire peut modifier',
+                        style: TextStyle(
+                          color:
+                              _isProjectOwner ? HexColor('#FF5C02') : Colors.grey,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                        overflow: TextOverflow.ellipsis,
+                        maxLines: 2,
                       ),
                     ),
                   ],

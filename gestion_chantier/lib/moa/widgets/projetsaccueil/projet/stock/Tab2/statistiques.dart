@@ -266,7 +266,7 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                               ),
                             );
                           }
-                          final maxValue = materials
+                          materials
                               .map((e) => e.totalUsedQuantity)
                               .reduce((a, b) => a > b ? a : b);
                           final maxY = 350.0;
@@ -653,10 +653,7 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                                                 ];
                                                 final parts = m.split('-');
                                                 final mIdx =
-                                                    int.tryParse(
-                                                      parts[0] ?? '1',
-                                                    ) ??
-                                                    1;
+                                                    int.tryParse(parts[0]) ?? 1;
                                                 return Transform.rotate(
                                                   angle: -0.5,
                                                   child: Text(
@@ -788,10 +785,7 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                                                 ];
                                                 final parts = m.split('-');
                                                 final mIdx =
-                                                    int.tryParse(
-                                                      parts[0] ?? '1',
-                                                    ) ??
-                                                    1;
+                                                    int.tryParse(parts[0]) ?? 1;
                                                 return Transform.rotate(
                                                   angle: -0.5,
                                                   child: Text(

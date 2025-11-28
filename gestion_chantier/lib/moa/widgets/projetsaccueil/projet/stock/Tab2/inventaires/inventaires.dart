@@ -32,8 +32,15 @@ class _InventairesTabState extends State<InventairesTab> {
     _loadData();
   }
 
+  void _safeSetState(VoidCallback fn) {
+    if (mounted) {
+      setState(fn);
+    }
+  }
+
   Future<void> _loadData() async {
-    setState(() {
+    if (!mounted) return;
+    _safeSetState(() {
       _isLoading = true;
       _errorMessage = null;
     });
@@ -41,11 +48,11 @@ class _InventairesTabState extends State<InventairesTab> {
     try {
       await Future.wait([_loadMateriaux(), _loadMouvementsRecents()]);
     } catch (e) {
-      setState(() {
+      _safeSetState(() {
         _errorMessage = 'Erreur lors du chargement des données: $e';
       });
     } finally {
-      setState(() {
+      _safeSetState(() {
         _isLoading = false;
       });
     }
@@ -59,13 +66,13 @@ class _InventairesTabState extends State<InventairesTab> {
       final List<MaterialModel> materialsFromApi = await _materialsApiService
           .getMaterialsByProperty(widget.projet.id);
 
-      setState(() {
+      _safeSetState(() {
         materiaux =
             materialsFromApi.map((material) => material.toMateriau()).toList();
       });
     } catch (e) {
       print('Erreur lors du chargement des matériaux: $e');
-      setState(() {
+      _safeSetState(() {
         materiaux = [];
       });
       rethrow;
@@ -80,7 +87,7 @@ class _InventairesTabState extends State<InventairesTab> {
       final List<MovementModel> movementsFromApi = await _movementsApiService
           .getMovementsByProperty(widget.projet.id);
 
-      setState(() {
+      _safeSetState(() {
         // Convertir les MovementModel en Mouvement et trier par date (plus récent en premier)
         mouvementsRecents =
             movementsFromApi.map((movement) => movement.toMouvement()).toList()
@@ -92,7 +99,9 @@ class _InventairesTabState extends State<InventairesTab> {
         }
       });
 
-      print('${mouvementsRecents.length} mouvements récents chargés');
+      if (mounted) {
+        print('${mouvementsRecents.length} mouvements récents chargés');
+      }
     } catch (e) {
       print('Erreur lors du chargement des mouvements récents');
     }
@@ -632,7 +641,7 @@ class _InventairesTabState extends State<InventairesTab> {
             child: AjouterMateriauScreen(projet: widget.projet),
           ),
     ).then((result) {
-      if (result == true) {
+      if (result == true && mounted) {
         _refreshData();
       }
     });
@@ -656,7 +665,7 @@ class _InventairesTabState extends State<InventairesTab> {
             ),
           ),
     ).then((result) {
-      if (result == true) {
+      if (result == true && mounted) {
         _refreshData();
       }
     });

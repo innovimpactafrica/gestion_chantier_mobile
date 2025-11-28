@@ -194,7 +194,7 @@ class _LivraisonsTabState extends State<LivraisonsTab> {
         color: HexColor('#777777'),
       ),
       title: 'LIV-${livraison.id.toString().padLeft(6, '0')}',
-      subtitle: livraison.supplier.nom ?? 'Fournisseur inconnu',
+      subtitle: livraison.supplier.nom,
       statut: _mapStatusToEnum(livraison.status),
       hasSwitch: false,
       hasArrow: true,

@@ -19,3 +19,7 @@ class UpdateAuthenticationStatusEvent extends HomeEvent {
 
   const UpdateAuthenticationStatusEvent({required this.isAuthenticated});
 }
+
+class ClearUserEvent extends HomeEvent {
+  const ClearUserEvent();
+}

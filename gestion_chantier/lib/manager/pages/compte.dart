@@ -5,7 +5,9 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/svg.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_event.dart';
+import 'package:gestion_chantier/manager/bloc/auth/auth_state.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_bloc.dart';
+import 'package:gestion_chantier/manager/bloc/home/home_event.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_state.dart';
 import 'package:gestion_chantier/manager/pages/auth/login.dart';
 import 'package:gestion_chantier/manager/pages/profil.dart';
@@ -321,6 +323,8 @@ class _ComptePageState extends State<ComptePage> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
+                // Réinitialiser les données utilisateur dans HomeBloc
+                context.read<HomeBloc>().add(ClearUserEvent());
                 // Déclencher l'événement de déconnexion
                 context.read<AuthBloc>().add(AuthLogoutEvent());
 

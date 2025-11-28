@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_chantier/fournisseur/bloc/auth/auth_bloc.dart';
 import 'package:gestion_chantier/fournisseur/bloc/auth/auth_event.dart';
+import 'package:gestion_chantier/fournisseur/bloc/auth/auth_state.dart';
 import 'package:gestion_chantier/fournisseur/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/fournisseur/bloc/home/home_state.dart';
+import 'package:gestion_chantier/fournisseur/pages/auth/login.dart';
 import 'package:gestion_chantier/fournisseur/utils/HexColor.dart';
 
 class ComptePage extends StatelessWidget {
@@ -11,233 +13,246 @@ class ComptePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<HomeBloc, HomeState>(
-      builder: (context, state) {
-        final isLoggedIn = state.currentUser != null;
+    return BlocListener<AuthBloc, AuthState>(
+      listener: (context, authState) {
+        if (authState is AuthUnauthenticatedState) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => LoginScreen()),
+            (route) => false,
+          );
+        }
+      },
+      child: BlocBuilder<HomeBloc, HomeState>(
+        builder: (context, state) {
+          final isLoggedIn = state.currentUser != null;
 
-        return Container(
-          color: HexColor('#F5F7FA'),
-          child: SafeArea(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // Header
-                  Container(
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 60,
-                          height: 60,
-                          decoration: BoxDecoration(
-                            color: HexColor('#FF5C02'),
-                            borderRadius: BorderRadius.circular(30),
+          return Container(
+            color: HexColor('#F5F7FA'),
+            child: SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(20),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Header
+                    Container(
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 60,
+                            height: 60,
+                            decoration: BoxDecoration(
+                              color: HexColor('#FF5C02'),
+                              borderRadius: BorderRadius.circular(30),
+                            ),
+                            child: Icon(
+                              Icons.local_shipping,
+                              color: Colors.white,
+                              size: 30,
+                            ),
                           ),
-                          child: Icon(
-                            Icons.local_shipping,
-                            color: Colors.white,
-                            size: 30,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isLoggedIn
-                                    ? '${state.currentUser!.prenom} ${state.currentUser!.nom}'
-                                    : 'Fournisseur',
-                                style: TextStyle(
-                                  fontSize: 20,
-                                  fontWeight: FontWeight.bold,
-                                  color: HexColor('#1A365D'),
+                          const SizedBox(width: 16),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  isLoggedIn
+                                      ? '${state.currentUser!.prenom} ${state.currentUser!.nom}'
+                                      : 'Fournisseur',
+                                  style: TextStyle(
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.bold,
+                                    color: HexColor('#1A365D'),
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(height: 4),
-                              Text(
-                                isLoggedIn ? state.currentUser!.email : '',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: HexColor('#8A98A8'),
+                                const SizedBox(height: 4),
+                                Text(
+                                  isLoggedIn ? state.currentUser!.email : '',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: HexColor('#8A98A8'),
+                                  ),
                                 ),
-                              ),
-                            ],
+                              ],
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Section Paramètres
-                  Text(
-                    'Paramètres',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: HexColor('#1A365D'),
+                    const SizedBox(height: 24),
+                    // Section Paramètres
+                    Text(
+                      'Paramètres',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: HexColor('#1A365D'),
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildListTile(
-                          context,
-                          icon: Icon(
-                            Icons.person_outline,
-                            color: HexColor('#FF5C02'),
-                            size: 24,
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildListTile(
+                            context,
+                            icon: Icon(
+                              Icons.person_outline,
+                              color: HexColor('#FF5C02'),
+                              size: 24,
+                            ),
+                            title: 'Informations Personnelles',
+                            hasSwitch: false,
+                            hasArrow: true,
+                            onTap: () {
+                              if (isLoggedIn) {
+                                // TODO: Naviguer vers la page de profil
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Page de profil en développement',
+                                    ),
+                                  ),
+                                );
+                              }
+                            },
                           ),
-                          title: 'Informations Personnelles',
-                          hasSwitch: false,
-                          hasArrow: true,
-                          onTap: () {
-                            if (isLoggedIn) {
-                              // TODO: Naviguer vers la page de profil
+                          const Divider(height: 1),
+                          _buildListTile(
+                            context,
+                            icon: Icon(
+                              Icons.notifications_outlined,
+                              color: HexColor('#FF5C02'),
+                              size: 24,
+                            ),
+                            title: 'Notifications',
+                            hasSwitch: true,
+                            hasArrow: false,
+                            onTap: () {},
+                          ),
+                          const Divider(height: 1),
+                          _buildListTile(
+                            context,
+                            icon: Icon(
+                              Icons.security_outlined,
+                              color: HexColor('#FF5C02'),
+                              size: 24,
+                            ),
+                            title: 'Sécurité',
+                            hasSwitch: false,
+                            hasArrow: true,
+                            onTap: () {
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
                                   content: Text(
-                                    'Page de profil en développement',
+                                    'Page de sécurité en développement',
                                   ),
                                 ),
                               );
-                            }
-                          },
-                        ),
-                        const Divider(height: 1),
-                        _buildListTile(
-                          context,
-                          icon: Icon(
-                            Icons.notifications_outlined,
-                            color: HexColor('#FF5C02'),
-                            size: 24,
+                            },
                           ),
-                          title: 'Notifications',
-                          hasSwitch: true,
-                          hasArrow: false,
-                          onTap: () {},
-                        ),
-                        const Divider(height: 1),
-                        _buildListTile(
-                          context,
-                          icon: Icon(
-                            Icons.security_outlined,
-                            color: HexColor('#FF5C02'),
-                            size: 24,
-                          ),
-                          title: 'Sécurité',
-                          hasSwitch: false,
-                          hasArrow: true,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text(
-                                  'Page de sécurité en développement',
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 24),
+                    // Section Support
+                    Text(
+                      'Support',
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                        color: HexColor('#1A365D'),
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    Container(
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Column(
+                        children: [
+                          _buildListTile(
+                            context,
+                            icon: Icon(
+                              Icons.help_outline,
+                              color: HexColor('#FF5C02'),
+                              size: 24,
+                            ),
+                            title: 'Aide et Support',
+                            hasSwitch: false,
+                            hasArrow: true,
+                            onTap: () {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                  content: Text(
+                                    'Page d\'aide en développement',
+                                  ),
                                 ),
-                              ),
-                            );
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  // Section Support
-                  Text(
-                    'Support',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: HexColor('#1A365D'),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: Column(
-                      children: [
-                        _buildListTile(
-                          context,
-                          icon: Icon(
-                            Icons.help_outline,
-                            color: HexColor('#FF5C02'),
-                            size: 24,
+                              );
+                            },
                           ),
-                          title: 'Aide et Support',
-                          hasSwitch: false,
-                          hasArrow: true,
-                          onTap: () {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(
-                                content: Text('Page d\'aide en développement'),
-                              ),
-                            );
-                          },
-                        ),
-                        const Divider(height: 1),
-                        _buildListTile(
-                          context,
-                          icon: Icon(
-                            Icons.info_outline,
-                            color: HexColor('#FF5C02'),
-                            size: 24,
+                          const Divider(height: 1),
+                          _buildListTile(
+                            context,
+                            icon: Icon(
+                              Icons.info_outline,
+                              color: HexColor('#FF5C02'),
+                              size: 24,
+                            ),
+                            title: 'À propos',
+                            hasSwitch: false,
+                            hasArrow: true,
+                            onTap: () {
+                              _showAboutDialog(context);
+                            },
                           ),
-                          title: 'À propos',
-                          hasSwitch: false,
-                          hasArrow: true,
-                          onTap: () {
-                            _showAboutDialog(context);
-                          },
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 32),
-                  // Bouton de déconnexion
-                  if (isLoggedIn)
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: () {
-                          _showLogoutDialog(context);
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.red,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                    const SizedBox(height: 32),
+                    // Bouton de déconnexion
+                    if (isLoggedIn)
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () {
+                            _showLogoutDialog(context);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                           ),
-                          padding: const EdgeInsets.symmetric(vertical: 16),
-                        ),
-                        child: const Text(
-                          'Se déconnecter',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
+                          child: const Text(
+                            'Se déconnecter',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.white,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
+          );
+        },
+      ),
     );
   }
 
@@ -317,8 +332,15 @@ class ComptePage extends StatelessWidget {
               onPressed: () {
                 Navigator.of(context).pop();
                 context.read<AuthBloc>().add(AuthLogoutEvent());
-                // TODO: Rediriger vers la page de connexion
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Vous avez été déconnecté avec succès.'),
+                    duration: Duration(seconds: 2),
+                  ),
+                );
               },
+              style: TextButton.styleFrom(foregroundColor: Colors.red),
               child: const Text('Déconnexion'),
             ),
           ],

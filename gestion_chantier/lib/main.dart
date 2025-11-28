@@ -8,7 +8,7 @@ import 'package:gestion_chantier/manager/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_event.dart';
 import 'package:gestion_chantier/manager/bloc/projet/projet_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/projets/projet_bloc.dart';
-import 'package:gestion_chantier/manager/pages/auth/login.dart';
+import 'package:gestion_chantier/manager/pages/splash/splash1.dart';
 import 'package:gestion_chantier/manager/repository/auth_repository.dart';
 import 'package:gestion_chantier/manager/services/CommandesService.dart';
 import 'package:gestion_chantier/manager/services/ConstructionPhaseIndicator_service.dart';
@@ -68,7 +68,7 @@ class MyApp extends StatelessWidget {
         ],
         child: MaterialApp(
           debugShowCheckedModeBanner: false,
-          home: LoginScreen(),
+          home: SplashScreen(),
         ),
       ),
     );

@@ -56,11 +56,14 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     AuthLogoutEvent event,
     Emitter<AuthState> emit,
   ) async {
-    _sharedPreferencesService.removeValue(APIConstants.AUTH_TOKEN);
-
     emit(AuthLoadingState());
 
     try {
+      // Supprimer le token d'authentification
+      await _sharedPreferencesService.removeValue(APIConstants.AUTH_TOKEN);
+      // Supprimer le refresh token
+      await _sharedPreferencesService.removeValue(APIConstants.REFRESH_TOKEN);
+      
       emit(AuthUnauthenticatedState());
     } catch (e) {
       emit(AuthErrorState(message: 'Erreur de déconnexion : ${e.toString()}'));

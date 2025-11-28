@@ -46,6 +46,7 @@ class _VueGeneraleWidgetState extends State<VueGeneraleWidget> {
   }
 
   Future<void> _loadAlbums() async {
+    if (!mounted) return;
     setState(() {
       _isLoadingAlbums = true;
       _albumsError = null;
@@ -53,11 +54,13 @@ class _VueGeneraleWidgetState extends State<VueGeneraleWidget> {
 
     try {
       final albums = await _albumService.getAlbumsByProperty(widget.projet.id);
+      if (!mounted) return;
       setState(() {
         _albums = albums;
         _isLoadingAlbums = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         _albumsError = e.toString();
         _isLoadingAlbums = false;
@@ -1101,14 +1104,16 @@ class _AlbumDetailModalState extends State<_AlbumDetailModal> {
     _pageController = PageController();
     if (widget.album.pictures.length > 1) {
       _autoScrollTimer = Timer.periodic(Duration(seconds: 2), (timer) {
-        if (_pageController.hasClients) {
+        if (!mounted || !_pageController.hasClients) {
+          timer.cancel();
+          return;
+        }
           int nextPage = (_currentPage + 1) % widget.album.pictures.length;
           _pageController.animateToPage(
             nextPage,
             duration: Duration(milliseconds: 400),
             curve: Curves.easeInOut,
           );
-        }
       });
     }
   }
@@ -1266,7 +1271,11 @@ class _AlbumDetailModalState extends State<_AlbumDetailModal> {
                   child: PageView.builder(
                     controller: _pageController,
                     itemCount: album.pictures.length,
-                    onPageChanged: (i) => setState(() => _currentPage = i),
+                    onPageChanged: (i) {
+                      if (mounted) {
+                        setState(() => _currentPage = i);
+                      }
+                    },
                     itemBuilder: (context, i) {
                       return Image.network(
                         '${APIConstants.API_BASE_URL_IMG}${album.pictures[i]}',

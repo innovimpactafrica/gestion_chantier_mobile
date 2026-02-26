@@ -1,8 +1,262 @@
 import 'package:flutter/material.dart';
-import 'package:gestion_chantier/manager/models/Rapport.dart';
+import 'package:gestion_chantier/bet/utils/constant.dart';
+import 'package:gestion_chantier/manager/bloc/rapport/RapportBloc.dart'
+    show RapportBloc;
+import 'package:gestion_chantier/manager/bloc/rapport/RapportEvent.dart'
+    show LoadRapports;
+import 'package:gestion_chantier/manager/bloc/rapport/RapportState.dart'
+    show RapportState, RapportLoading, RapportError, RapportLoaded;
+
 import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
+import 'package:gestion_chantier/manager/repository/RapportRepository.dart';
 import 'package:gestion_chantier/manager/services/RapportService.dart';
 
+import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gestion_chantier/shared/utils/openFileUtil.dart' show openFileFromUrl;
+
+import '../../../../../../models/RapportModel.dart';
+class RapportsWidgetBloc extends StatefulWidget {
+  final RealEstateModel projet;
+
+  const RapportsWidgetBloc({super.key, required this.projet});
+
+  @override
+  State<RapportsWidgetBloc> createState() => RapportsWidgetBlocState();
+}
+
+class RapportsWidgetBlocState extends State<RapportsWidgetBloc> {
+  late final RapportBloc _bloc;
+  bool _manualRefresh = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _bloc = RapportBloc(repository: RapportRepository());
+    _loadRapports();
+  }
+
+  void _loadRapports() {
+    _bloc.add(LoadRapports(userId: widget.projet.id, reset: true));
+  }
+
+  /// 🔥 appelé par le parent (NotificationListener)
+  void loadMore() {
+    _bloc.add(LoadRapports(userId: widget.projet.id));
+  }
+
+  void refresh() {
+    setState(() => _manualRefresh = true);
+    _loadRapports();
+  }
+
+  @override
+  void dispose() {
+    _bloc.close();
+    super.dispose();
+  }
+
+
+  Widget _buildEmpty() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: const [
+        Icon(Icons.insert_drive_file_outlined, size: 60, color: Colors.grey),
+        SizedBox(height: 16),
+        Text("Aucun rapport disponible"),
+      ],
+    );
+  }
+  Widget _buildError(String message) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Text("Erreur : $message"),
+        const SizedBox(height: 12),
+        ElevatedButton(
+          onPressed: refresh,
+          child: const Text("Réessayer"),
+        ),
+      ],
+    );
+  }
+
+
+  @override
+  Widget build(BuildContext context) {
+    return BlocBuilder<RapportBloc, RapportState>(
+      bloc: _bloc,
+      builder: (context, state) {
+        if (state is RapportLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (state is RapportError) {
+          return Center(child: Text(state.message));
+        }
+
+        if (state is RapportLoaded) {
+          if (state.rapports.isEmpty) {
+            return const Center(child: Text("Aucun rapport"));
+          }
+
+          return Column(
+            children: [
+              ListView.builder(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: state.rapports.length,
+                itemBuilder: (_, i) {
+                  final r = state.rapports[i];
+                  return  _buildReportItem(r);
+                },
+              ),
+              if (!state.hasReachedMax)
+                const Padding(
+                  padding: EdgeInsets.all(16),
+                  child: CircularProgressIndicator(),
+                ),
+            ],
+          );
+        }
+
+        return const SizedBox();
+      },
+    );
+  }
+
+
+
+
+  Widget _buildReportItem(RapportModel r) {
+    return Container(
+      margin: EdgeInsets.only(bottom: 12),
+      padding: EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(12),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 6,
+            offset: Offset(0, 2),
+          ),
+        ],
+      ),
+      child: InkWell(
+        onTap: () {
+          openFileFromUrl(
+            APIConstants.API_BASE_URL_IMG + r.pdf,
+            r.pdf,
+          );
+        },
+        borderRadius: BorderRadius.circular(12),
+        child: Row(
+          children: [
+            // Icône PDF
+            Container(
+              width: 48,
+              height: 48,
+              decoration: BoxDecoration(
+                color: Colors.red[50],
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.file_download,
+                      color: Colors.red[400],
+                      size: 20,
+                    ),
+                    Text(
+                      'PDF',
+                      style: TextStyle(
+                        color: Colors.red[400],
+                        fontSize: 8,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            SizedBox(width: 16),
+
+            // Informations du rapport
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    r.titre,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.grey[800],
+                    ),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'ss',
+                    style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  ),
+                ],
+              ),
+            ),
+
+            // Date et icône de téléchargement
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Text(
+                  _formatDate(r.lastUpdated),
+                  style: TextStyle(fontSize: 14, color: Colors.grey[500]),
+                ),
+                SizedBox(height: 4),
+                Icon(
+                  Icons.download_outlined,
+                  color: Colors.grey[400],
+                  size: 20,
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.day} ${_getMonthName(date.month)}';
+  }
+
+  String _getMonthName(int month) {
+    const months = [
+      'janv.',
+      'févr.',
+      'mars',
+      'avr.',
+      'mai',
+      'juin',
+      'juil.',
+      'août',
+      'sept.',
+      'oct.',
+      'nov.',
+      'déc.',
+    ];
+    return months[month - 1];
+  }
+
+  String _formatFileSize(String pdfUrl) {
+    // TODO: Implémenter une logique pour obtenir la taille réelle du fichier
+    // Pour l'instant, on retourne une taille fictive
+    return '${pdfUrl.length ~/ 1000}ko'; // Approximation basée sur la longueur de l'URL
+  }
+}
+/*
 class RapportsWidget extends StatefulWidget {
   final RealEstateModel projet;
 
@@ -265,3 +519,4 @@ class _RapportsWidgetState extends State<RapportsWidget> {
     return '${pdfUrl.length ~/ 1000}ko'; // Approximation basée sur la longueur de l'URL
   }
 }
+*/

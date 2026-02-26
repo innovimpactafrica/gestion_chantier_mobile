@@ -7,14 +7,15 @@ import 'package:gestion_chantier/manager/utils/constant.dart';
 
 class AlbumsViewer extends StatefulWidget {
   final RealEstateModel projet;
+  final bool albumAdded;
 
-  const AlbumsViewer({super.key, required this.projet});
+  const AlbumsViewer({super.key, required this.projet, required this.albumAdded});
 
   @override
-  State<AlbumsViewer> createState() => _AlbumsViewerState();
+  State<AlbumsViewer> createState() => AlbumsViewerState();
 }
 
-class _AlbumsViewerState extends State<AlbumsViewer> {
+class AlbumsViewerState extends State<AlbumsViewer> {
   final ProgressAlbumService _albumService = ProgressAlbumService();
   List<ProgressAlbum> _albums = [];
   bool _isLoading = true;
@@ -25,6 +26,12 @@ class _AlbumsViewerState extends State<AlbumsViewer> {
     super.initState();
     _loadAlbums();
   }
+  /// 👈 FONCTION APPELABLE DEPUIS LE PARENT
+  void reloadAlbums() {
+    _loadAlbums();
+  }
+
+
 
   Future<void> _loadAlbums() async {
     setState(() {

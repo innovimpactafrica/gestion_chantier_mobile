@@ -2,10 +2,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_switch/flutter_switch.dart';
+import '../../manager/bloc/auth/auth_bloc.dart';
+import '../../manager/bloc/auth/auth_event.dart';
+import '../../manager/bloc/auth/auth_state.dart';
+import '../../services/PushNotificationService.dart';
+import '../../shared/utils/constant.dart';
 import '../models/UserModel.dart';
 import '../services/AuthService.dart';
-import '../bloc/auth/auth_bloc.dart';
-import '../bloc/auth/auth_event.dart';
+
+//import '../bloc/auth/auth_bloc.dart';
+//import '../bloc/auth/auth_event.dart';
+import '../utils/ToastUtils.dart';
+import '../utils/profile_utils.dart';
 
 class MonCompteOuvrierPage extends StatefulWidget {
   const MonCompteOuvrierPage({Key? key}) : super(key: key);
@@ -44,6 +52,123 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
       });
     }
   }
+
+  void _showChangePasswordDialog(BuildContext context) {
+    final TextEditingController emailController = TextEditingController();
+    final TextEditingController passwordController = TextEditingController();
+    final TextEditingController newPasswordController = TextEditingController();
+    final changePasswordFormKey = GlobalKey<FormState>();
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext dialogContext) {
+        return BlocConsumer<AuthBloc, AuthState>(
+          listener: (context, state) {
+            if (state is AuthSuccessState) {
+              Navigator.of(dialogContext).pop(); // Ferme le popup
+              // Affiche un message de succès
+              ToastUtils.show(state.message);
+            } else if (state is AuthErrorState) {
+              // Affiche l'erreur
+              ToastUtils.show(state.message);
+            }
+          },
+          builder: (context, state) {
+            return AlertDialog(
+              title: Text(
+                'Changer le mot de passe',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
+              content: Form(
+                key: changePasswordFormKey,
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    TextFormField(
+                      controller: emailController,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez saisir votre email';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Votre email',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: passwordController,
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez saisir votre mot de passe actuel';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Mot de passe actuel',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: 16),
+                    TextFormField(
+                      controller: newPasswordController,
+                      obscureText: true,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Veuillez saisir un nouveau mot de passe';
+                        }
+                        return null;
+                      },
+                      decoration: InputDecoration(
+                        hintText: 'Nouveau mot de passe',
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(),
+                  child: Text('Annuler'),
+                ),
+                ElevatedButton(
+                  onPressed: state is AuthLoadingState
+                      ? null
+                      : () {
+                    if (changePasswordFormKey.currentState!.validate()) {
+                      BlocProvider.of<AuthBloc>(context).add(
+                        AuthChangePasswordEvent(
+                          email: emailController.text.trim(),
+                          password: passwordController.text.trim(),
+                          newPassword: newPasswordController.text.trim(),
+                        ),
+                      );
+                    }
+                  },
+                  child: state is AuthLoadingState
+                      ? CircularProgressIndicator()
+                      : Text('Changer'),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -125,7 +250,7 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                                             height: 94,
                                           )
                                           : Image.asset(
-                                            'assets/images/profil.jpg',
+                                            'assets/images/avatar1.png',
                                             fit: BoxFit.cover,
                                             width: 94,
                                             height: 94,
@@ -148,7 +273,8 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                               const SizedBox(height: 8),
                               // Rôle
                               Text(
-                                currentUser?.profil ?? 'Ouvrier',
+                                ProfileUtils.toFrench(currentUser?.profil) ??
+                                    'Ouvrier',
                                 style: const TextStyle(
                                   fontSize: 16,
                                   color: Color(0xFFB0B0B0),
@@ -171,7 +297,7 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                         child: Column(
                           children: [
                             // Informations personnelles
-                            _buildListTile(
+                            /*   _buildListTile(
                               icon: SvgPicture.asset(
                                 'assets/icons/edit.svg',
                                 width: 24,
@@ -201,7 +327,7 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                               height: 0.5,
                               thickness: 1,
                               color: Color(0xFFE0E0E0),
-                            ),
+                            ),*/
                             // Notifications
                             _buildListTile(
                               icon: SvgPicture.asset(
@@ -231,7 +357,7 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                                 ),
                               ),
                             ),
-                            const Divider(
+                            /* const Divider(
                               height: 0.5,
                               thickness: 1,
                               color: Color(0xFFE0E0E0),
@@ -246,7 +372,43 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                               ),
                               title: 'Bulletins de salaire',
                               onTap: () {},
+                            ),*/
+                            const Divider(
+                              height: 0.5,
+                              thickness: 1,
+                              color: Color(0xFFE0E0E0),
                             ),
+                            const SizedBox(height: 18),
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(16),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withOpacity(0.03),
+                                    blurRadius: 4,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Column(
+                                children: [
+                                  _buildListTile(
+                                    icon: SvgPicture.asset(
+                                      'assets/icons/lock.svg',
+                                      width: 24,
+                                      height: 24,
+                                      color: const Color(0xFFFF5C02),
+                                    ),
+                                    title: 'Changer mon mot de passe',
+                                    onTap: () async {
+                                      _showChangePasswordDialog( context);
+                                    },
+                                  ),
+                                ],
+                              ),
+                            ),
+
                             const Divider(
                               height: 0.5,
                               thickness: 1,
@@ -324,6 +486,13 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                                           AuthLogoutEvent(),
                                         );
 
+                                        PushNotificationService()
+                                            .unsubscribeFromTopic(
+                                              BTPConst.BASE_TOPIC +
+                                                  currentUser!.id.toString(),
+                                            );
+                                        // U
+
                                         ScaffoldMessenger.of(
                                           context,
                                         ).showSnackBar(
@@ -348,6 +517,10 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                 ),
       ),
     );
+
+
+
+
   }
 
   Widget _buildListTile({

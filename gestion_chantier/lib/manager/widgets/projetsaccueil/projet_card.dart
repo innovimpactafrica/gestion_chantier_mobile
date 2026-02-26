@@ -90,7 +90,7 @@ class MainProjetCard extends StatelessWidget {
                   SizedBox(height: 14),
                   // Progression
                   _buildProgressSection(
-                    progression: projet.averageProgress.round(),
+                    progression: projet.averageProgress!.round(),
                     isMain: true,
                   ),
                 ],
@@ -197,7 +197,7 @@ class SecondaryProjetCard extends StatelessWidget {
                     SizedBox(height: 6),
 
                     _buildProgressSection(
-                      progression: projet.averageProgress.round(),
+                      progression: projet.averageProgress!.round(),
                       isMain: false,
                     ),
                   ],

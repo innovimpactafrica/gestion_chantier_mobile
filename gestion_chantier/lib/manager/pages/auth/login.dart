@@ -8,6 +8,12 @@ import 'package:gestion_chantier/manager/bloc/auth/auth_event.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_state.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_event.dart';
+import 'package:gestion_chantier/shared/utils/constant.dart';
+
+import '../../../bet/utils/constant.dart';
+import '../../../ouvrier/utils/ToastUtils.dart';
+import '../../../services/PushNotificationService.dart';
+import '../../utils/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -30,7 +36,7 @@ class _LoginScreenState extends State<LoginScreen> {
         listener: (context, state) {
           if (state is AuthAuthenticatedState) {
             // Connexion réussie - afficher les infos utilisateur
-            showDialog(
+            /*  showDialog(
               context: context,
               builder:
                   (context) => AlertDialog(
@@ -41,9 +47,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       children: [
                         Text('Nom : ${state.user.nom}'),
                         Text('Prénom : ${state.user.prenom}'),
-                        Text('Email : ${state.user.email}'),
-                        Text('Profil : ${state.user.profil}'),
-                        Text('Téléphone : ${state.user.telephone}'),
+                 //       Text('Email : ${state.user.email}'),
+                      //  Text('Profil : ${state.user.profil}'),
+                     //   Text('Téléphone : ${state.user.telephone}'),
                       ],
                     ),
                     actions: [
@@ -62,7 +68,31 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ],
                   ),
+            );*/
+            context.read<HomeBloc>().add(LoadCurrentUserEvent());
+            PushNotificationService().subscribeToTopic(
+              BTPConst.BASE_TOPIC + state.user.id.toString(),
             );
+
+            if (state.user.profil.toLowerCase() == 'worker' &&
+                state.user.profil.toLowerCase() == 'moa' &&
+                state.user.profil.toLowerCase() == 'site_manager' &&
+                state.user.profil.toLowerCase() == 'promoteur') {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Vous n'avez pas accès à l'application mobile. Veuillez utiliser la version web.",
+                  ),
+                  backgroundColor: Colors.red,
+                  duration: Duration(seconds: 4),
+                ),
+              );
+              //  _routeToFournisseur(context);
+            } else {
+              RoutingService.routeByProfile(context, state.user.profil);
+            }
+            // Utiliser le service de routage centralisé
+
             // Ne pas rediriger tout de suite, attendre la fermeture du dialog
             return;
           } else if (state is AuthErrorState) {
@@ -106,8 +136,11 @@ class _LoginScreenState extends State<LoginScreen> {
               key: _formKey,
               child: Padding(
                 padding: EdgeInsets.symmetric(horizontal: 24.0, vertical: 10),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
+                child: ListView(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 0.0,
+                    vertical: 10,
+                  ),
                   children: [
                     // Titre principal
                     Text(
@@ -212,7 +245,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           if (value == null || value.isEmpty) {
                             return 'Veuillez saisir votre mot de passe';
                           }
-                          if (value.length < 8) {
+                          if (value.length < 6) {
                             return 'Le mot de passe doit contenir au moins 8 caractères';
                           }
                           return null;
@@ -339,7 +372,7 @@ class _LoginScreenState extends State<LoginScreen> {
                     SizedBox(height: 22),
 
                     // Séparateur "Ou"
-                    Row(
+                    /*   Row(
                       children: [
                         Expanded(child: Divider(color: Colors.grey[300])),
                         Padding(
@@ -465,9 +498,9 @@ class _LoginScreenState extends State<LoginScreen> {
                           ),
                         ),
                       ],
-                    ),
+                    ),*/
+                    SizedBox(height: 40),
 
-                    Spacer(),
 
                     // Lien d'inscription en bas
                     Center(
@@ -487,7 +520,11 @@ class _LoginScreenState extends State<LoginScreen> {
                                 state is AuthLoadingState
                                     ? null
                                     : () {
-                                      Navigator.push(
+                                      UrlLauncher().openWebLink(
+                                        APIConstants.INSCRPTION_LINLK,
+                                      );
+
+                                      /* Navigator.push(
                                         context,
                                         MaterialPageRoute(
                                           builder:
@@ -501,7 +538,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                                     ),
                                               ),
                                         ),
-                                      );
+                                      );*/
                                     },
                             child: Text(
                               'S\'inscrire',
@@ -540,8 +577,15 @@ class _LoginScreenState extends State<LoginScreen> {
       builder: (BuildContext dialogContext) {
         return BlocConsumer<AuthBloc, AuthState>(
           listener: (context, state) {
-            if (state is AuthForgotPasswordSentState) {
-              Navigator.of(dialogContext).pop();
+            if (state is AuthSuccesState) {
+              Navigator.of(dialogContext).pop(); // ferme le popup
+              // Affiche le toast
+
+              ToastUtils.show(state.message);
+
+              // Affiche l'erreur en toast
+            } else if (state is AuthErrorState) {
+              // ToastUtils.show(state.message);
             }
           },
           builder: (context, state) {

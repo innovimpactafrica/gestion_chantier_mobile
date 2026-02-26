@@ -49,10 +49,14 @@ class _StockPageState extends State<StockPage> {
   Widget _buildTabBar() {
     return Container(
       color: HexColor('#1A365D'),
+      width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.symmetric(horizontal: 15),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(tabs.length, (index) => _buildTabItem(index)),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(tabs.length, (index) => _buildTabItem(index)),
+        ),
       ),
     );
   }

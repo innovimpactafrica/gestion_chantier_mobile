@@ -34,11 +34,13 @@ class StatsGrid extends StatelessWidget {
                       _StatCard(
                         value: '${state.dashboard.daysPresent}',
                         label: 'Jours présents',
+                        icon: Icons.calendar_today_outlined,
                       ),
                       const SizedBox(width: 16),
                       _StatCard(
                         value: '${state.dashboard.totalWorkedHours}',
                         label: 'Heures travaillées',
+                        icon: Icons.schedule_outlined
                       ),
                     ],
                   ),
@@ -48,11 +50,13 @@ class StatsGrid extends StatelessWidget {
                       _StatCard(
                         value: '${state.dashboard.completedTasks}',
                         label: 'Tâches terminées',
+                          icon: Icons.task_alt
                       ),
                       const SizedBox(width: 16),
                       _StatCard(
                         value: '${state.dashboard.performancePercentage}%',
                         label: 'Performance',
+                          icon:Icons.insights_outlined
                       ),
                     ],
                   ),
@@ -74,48 +78,69 @@ class StatsGrid extends StatelessWidget {
     );
   }
 }
-
 class _StatCard extends StatelessWidget {
   final String value;
   final String label;
-  const _StatCard({required this.value, required this.label});
+  final IconData icon;
+
+  const _StatCard({
+    required this.value,
+    required this.label,
+    required this.icon,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16),
+        padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Padding(
-          padding: const EdgeInsets.only(left: 16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                value,
-                style: const TextStyle(
-                  color: Color(0xFFFF5C02),
-                  fontWeight: FontWeight.bold,
-                  fontSize: 24,
+        child: Stack(
+          children: [
+            // Contenu principal
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: Color(0xFFFF5C02),
+                    fontWeight: FontWeight.bold,
+                    fontSize: 24,
+                  ),
                 ),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                label,
-                style: TextStyle(
-                  color: HexColor('#777777'),
-                  fontSize: 14,
-                  fontWeight: FontWeight.w400,
+                const SizedBox(height: 8),
+                Text(
+                  label,
+                  style: TextStyle(
+                    color: HexColor('#777777'),
+                    fontSize: 14,
+                    fontWeight: FontWeight.w400,
+                  ),
                 ),
-                textAlign: TextAlign.center,
+              ],
+            ),
+
+            // Icône en haut à droite
+            Positioned(
+              top: 0,
+              right: 0,
+              child: Icon(
+                icon,
+                size: 22,
+                color: HexColor('#777777'),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+
+
+
 }

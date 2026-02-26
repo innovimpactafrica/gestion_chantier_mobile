@@ -4,9 +4,39 @@ import 'package:flutter/material.dart';
 import 'package:gestion_chantier/manager/pages/auth/login.dart';
 import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
+import 'package:gestion_chantier/shared/services/routing_service.dart';
+import 'package:gestion_chantier/shared/utils/constant.dart' show BTPConst;
 
-class WelcomeScreen extends StatelessWidget {
+import '../../../bet/utils/constant.dart';
+import '../../utils/url_launcher.dart';
+import '../../../manager/services/SharedPreferencesService.dart';
+
+class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
+
+  @override
+  _WelcomeScreenState createState() => _WelcomeScreenState();
+}
+
+class _WelcomeScreenState extends State<WelcomeScreen>
+    with SingleTickerProviderStateMixin {
+  final SharedPreferencesService _sharedPreferencesService =
+  SharedPreferencesService();
+
+  Future<void> init() async {
+    final profil = await _sharedPreferencesService.getValue("profil");
+
+    if (profil != null && mounted) {
+      RoutingService.routeByProfile(context, profil);
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    init();
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +98,7 @@ class WelcomeScreen extends StatelessWidget {
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'Innovchantiers Inc.',
+                    'BTP CONNECT',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,
@@ -99,7 +129,8 @@ class WelcomeScreen extends StatelessWidget {
                     height: 50,
                     child: ElevatedButton(
                       onPressed: () {
-                        Navigator.push(
+                        UrlLauncher().openWebLink(BTPConst.BASE_LINK);
+                        /*  Navigator.push(
                           context,
                           MaterialPageRoute(
                             builder:
@@ -108,7 +139,7 @@ class WelcomeScreen extends StatelessWidget {
                                       (context) => const SizedBox(),
                                 ),
                           ),
-                        );
+                        );*/
                       },
                       style: ElevatedButton.styleFrom(
                         backgroundColor: HexColor('#FF5C02'),
@@ -119,7 +150,7 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       child: Text(
-                        'Créer un compte',
+                        'Visiter le site web',
                         style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.w500,

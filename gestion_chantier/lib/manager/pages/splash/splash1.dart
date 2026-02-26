@@ -31,7 +31,7 @@ class _SplashScreenState extends State<SplashScreen>
     _animationController.forward();
 
     // Navigation après 3 secondes
-    Future.delayed(Duration(seconds: 3), () {
+    Future.delayed(Duration(seconds: 0), () {
       Navigator.pushReplacement(
         context,
         MaterialPageRoute(builder: (context) => SplashScreensecond()),
@@ -80,7 +80,7 @@ class _SplashScreenState extends State<SplashScreen>
                 SizedBox(height: 15),
                 // Texte
                 Text(
-                  'Innovchantiers inc.',
+                  'BTP Connect.',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,

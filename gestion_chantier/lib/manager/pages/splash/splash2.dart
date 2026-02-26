@@ -80,7 +80,7 @@ class _SplashScreenState extends State<SplashScreensecond>
                 SizedBox(height: 15),
                 // Texte
                 Text(
-                  'Innovchantiers inc.',
+                  'BTP Connect.',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,
@@ -90,6 +90,7 @@ class _SplashScreenState extends State<SplashScreensecond>
                 ),
                 Text(
                   'Optimisez la gestion de vos chantiers, simplement.',
+                  textAlign: TextAlign.center,
                   style: TextStyle(
                     color: const Color.fromARGB(255, 225, 225, 225),
                     fontSize: 20,

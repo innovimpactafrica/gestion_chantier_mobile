@@ -72,7 +72,7 @@ class HeaderWidget extends StatelessWidget {
           ),
 
           // Notification Icon
-          SizedBox(
+        /*  SizedBox(
             width: 44,
             height: 44,
 
@@ -106,7 +106,7 @@ class HeaderWidget extends StatelessWidget {
                 ),
               ],
             ),
-          ),
+          ),*/
         ],
       ),
     );

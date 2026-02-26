@@ -79,7 +79,7 @@ class ApiService {
       "/materials",
       "/realestate",
       "/rapports",
-      "/tasks",
+    //  "/tasks",
       "/workers",
       "/orders",
       "/progress-album",

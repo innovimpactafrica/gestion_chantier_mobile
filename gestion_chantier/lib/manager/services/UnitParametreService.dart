@@ -13,7 +13,7 @@ class DocumentService {
   Future<List<DocumentModel>> getDocumentsByProperty(int propertyId) async {
     try {
       final response = await _apiService.dio.get(
-        '/documents/property/$propertyId',
+        '/documents/property/$propertyId?page=0&size=100',
       );
 
       if (response.statusCode == 200) {

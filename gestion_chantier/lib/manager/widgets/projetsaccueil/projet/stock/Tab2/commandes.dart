@@ -90,13 +90,13 @@ class _CommandesTabState extends State<CommandesTab> {
           ),
         ),
       ),
-      floatingActionButton: CustomFloatingButton(
+     /* floatingActionButton: CustomFloatingButton(
         imagePath: 'assets/icons/plus.svg',
         onPressed: _ajouterCommande,
         label: '',
         backgroundColor: HexColor('#FF5C02'),
         elevation: 4.0,
-      ),
+      ),*/
       floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
     );
   }
@@ -735,7 +735,12 @@ class _CommandeDetailModal extends StatelessWidget {
               ),
             ),
             SizedBox(height: 24),
-            Row(
+           /*
+           A faire
+
+           Row(
+
+
               children: [
                 Expanded(
                   child: ElevatedButton(
@@ -765,7 +770,7 @@ class _CommandeDetailModal extends StatelessWidget {
                   ),
                 ),
               ],
-            ),
+            ),*/
             SizedBox(height: 24),
           ],
         ),

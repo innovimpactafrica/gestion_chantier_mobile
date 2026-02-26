@@ -64,6 +64,41 @@ class AuthService {
     }
   }
 
+  Future<dynamic> resetPassword({required String email}) async {
+    try {
+      Response response = await _dio.post(
+        "/v1/auth/password/reset",
+        data: {"email": email},
+      );
+
+      return response.data;
+    } on DioException catch (e) {
+      _handleError(e, "Échec de la réinitialisation du mot de passe");
+    }
+  }
+
+  Future<dynamic> changePassword({
+    required String email,
+    required String password,
+    required String newPassword,
+  }) async {
+    try {
+      Response response = await _dio.put(
+        "/v1/auth/cahnge-password", // Assurez-vous que l'URL est correcte
+        data: {
+          "email": email,
+          "password": password,
+          "newPassword": newPassword,
+        },
+      );
+      return response.data;
+    } on DioException catch (e) {
+      throw Exception(
+        "Erreur lors de la modification du mot de passe : ${e.toString()}",
+      );
+    }
+  }
+
   // Méthode privée de gestion des erreurs améliorée
   dynamic _handleError(DioException e, String defaultMessage) {
     if (e.response != null) {

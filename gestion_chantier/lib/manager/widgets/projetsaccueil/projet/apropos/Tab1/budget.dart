@@ -1,9 +1,19 @@
+import 'dart:io';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:fl_chart/fl_chart.dart';
-import 'package:gestion_chantier/manager/models/ExpensesModel.dart';
-import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gestion_chantier/bet/utils/constant.dart';
+import 'package:gestion_chantier/manager/bloc/expense/expense_bloc.dart';
+import 'package:gestion_chantier/manager/bloc/expense/expense_event.dart';
+import 'package:gestion_chantier/manager/bloc/expense/expense_state.dart';
 import 'package:gestion_chantier/manager/models/BudgetModel.dart';
+
+import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
+import 'package:gestion_chantier/manager/repository/expense_repository.dart';
+
 import 'package:gestion_chantier/manager/services/AuthService.dart';
 import 'package:gestion_chantier/manager/services/budget_service.dart';
 
@@ -11,6 +21,10 @@ import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'dart:math' as math;
 
 import 'package:gestion_chantier/manager/widgets/CustomFloatingButton.dart';
+import 'package:gestion_chantier/shared/utils/openFileUtil.dart';
+import 'package:intl/intl.dart';
+
+import '../../../../../models/expense_model.dart';
 
 class BudgetTab extends StatefulWidget {
   final RealEstateModel projet;
@@ -22,6 +36,9 @@ class BudgetTab extends StatefulWidget {
 }
 
 class _BudgetTabState extends State<BudgetTab> {
+  final ScrollController _expenseScrollController = ScrollController();
+  late final ExpenseBloc _expenseBloc;
+
   final BudgetService _budgetService = BudgetService();
   bool _isSubmitting = false;
   bool _isProjectOwner = false;
@@ -35,7 +52,27 @@ class _BudgetTabState extends State<BudgetTab> {
   @override
   void initState() {
     super.initState();
+    _expenseBloc = ExpenseBloc(ExpenseRepository());
+
     _loadBudgetData();
+
+    _expenseScrollController.addListener(() {
+      if (_expenseScrollController.position.pixels >=
+          _expenseScrollController.position.maxScrollExtent * 0.9) {
+        if (budget != null) {
+          print("Loadings");
+          context.read<ExpenseBloc>().add(
+            LoadMoreExpenses(budgetId: budget!.id),
+          );
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _expenseBloc.close();
+    super.dispose();
   }
 
   /// Version améliorée de _loadBudgetData avec gestion d'erreur
@@ -72,47 +109,23 @@ class _BudgetTabState extends State<BudgetTab> {
       // Vérifier si l'utilisateur est le propriétaire du projet
       bool isOwner = false;
       if (budgetData != null) {
-        final projectOwnerId = budgetData.property.promoter.id.toString();
-        isOwner = _currentUserId == projectOwnerId;
-        print(
-          '🔍 Vérification de propriété: Utilisateur=$_currentUserId, Propriétaire=$projectOwnerId, EstPropriétaire=$isOwner',
-        );
-        print(
-          '🔍 Type Utilisateur: ${_currentUserId.runtimeType}, Type Propriétaire: ${projectOwnerId.runtimeType}',
-        );
-        print('🔍 Égalité stricte: ${_currentUserId == projectOwnerId}');
-        print(
-          '🔍 Égalité avec conversion: ${_currentUserId.toString() == projectOwnerId.toString()}',
-        );
-      } else {
-        print('⚠️ Aucun budget trouvé pour vérifier la propriété');
+        /* final projectOwnerId = budgetData.property.promoter!.id.toString();
+        isOwner = _currentUserId == projectOwnerId;*/
+
+        _expenseBloc.add(LoadExpenses(budgetId: budgetData.id));
       }
 
       // Charger l'historique des dépenses
-      List<ExpenseModel> expensesData = [];
-      if (budgetData != null) {
-        try {
-          expensesData = await _budgetService.getExpenseHistory(budgetData.id);
-          print('✅ ${expensesData.length} dépenses chargées');
-        } catch (e) {
-          print('⚠️ Erreur lors du chargement des dépenses (non critique): $e');
-          expensesData = [];
-        }
-      } else {
-        print('⚠️ Aucun budget trouvé pour ce projet');
-      }
 
       // Vérifier une dernière fois avant setState
       if (!mounted) return;
 
       setState(() {
         budget = budgetData;
-        depenses = expensesData;
-        _isProjectOwner = isOwner;
+
+        _isProjectOwner = true;
         isLoading = false;
       });
-
-      print('✅ Données du budget chargées avec succès');
     } catch (e) {
       print('❌ Erreur lors du chargement des données: $e');
 
@@ -148,11 +161,15 @@ class _BudgetTabState extends State<BudgetTab> {
 
   // Getters pour calculer les valeurs
   double get budgetTotal =>
-      budget?.plannedBudget ?? widget.projet.price.toDouble();
+      budget?.plannedBudget ?? widget.projet.price!.toDouble();
+
   double get budgetUtilise => budget?.consumedBudget ?? 0.0;
+
   double get budgetRestant => budget?.remainingBudget ?? budgetTotal;
+
   double get pourcentageUtilise =>
       budgetTotal > 0 ? (budgetUtilise / budgetTotal) * 100 : 0;
+
   double get pourcentageRestant =>
       budgetTotal > 0 ? (budgetRestant / budgetTotal) * 100 : 0;
 
@@ -167,20 +184,39 @@ class _BudgetTabState extends State<BudgetTab> {
               ? _buildErrorWidget()
               : RefreshIndicator(
                 onRefresh: _loadBudgetData,
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.only(left: 16, right: 16),
-                  child: Column(
-                    children: [
-                      _buildBudgetCard(),
-                      const SizedBox(height: 20),
-                      _buildExpensesList(),
-                    ],
+                child: NotificationListener<ScrollNotification>(
+                  onNotification: (notification) {
+                    if (notification.metrics.pixels >=
+                        notification.metrics.maxScrollExtent * 0.9) {
+                      _expenseBloc.add(LoadMoreExpenses(budgetId: budget!.id));
+                    }
+                    return false;
+                  },
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.only(left: 16, right: 16),
+                    child: Column(
+                      children: [
+                        _buildBudgetCard(),
+                        const SizedBox(height: 20),
+                        _buildExpensesList(bloc: _expenseBloc),
+                      ],
+                    ),
                   ),
                 ),
               ),
       floatingActionButton: CustomFloatingButton(
         imagePath: 'assets/icons/plus.svg',
-        onPressed: _showAddExpenseDialog,
+        onPressed: () async {
+          final result = await _showAddExpenseDialog();
+
+          final budgetData = await _budgetService.getBudgetByPropertyId(
+            widget.projet.id,
+          );
+
+          setState(() {
+            budget = budgetData;
+          });
+        },
         label: '',
         backgroundColor: HexColor('#FF5C02'),
         elevation: 4.0,
@@ -536,174 +572,156 @@ class _BudgetTabState extends State<BudgetTab> {
     return labels;
   }
 
-  Widget _buildExpensesList() {
-    return SizedBox(
-      width: double.infinity,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              const Row(
-                children: [
-                  Icon(Icons.history, color: Colors.grey),
-                  SizedBox(width: 8),
-                  Text(
-                    'Liste des dépenses',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w600,
-                      color: Colors.black87,
+  Widget _buildExpensesList({required ExpenseBloc bloc}) {
+    return BlocConsumer<ExpenseBloc, ExpenseState>(
+      bloc: bloc, // ← on passe le bloc existant
+      listener: (context, state) {
+        if (state is ExpenseError) {
+          ScaffoldMessenger.of(
+            context,
+          ).showSnackBar(SnackBar(content: Text(state.message)));
+        }
+      },
+      builder: (context, state) {
+        if (state is ExpenseLoading) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (state is ExpenseLoaded && state.expenses.isEmpty) {
+          return const Center(child: Text('Aucune dépense trouvée.'));
+        }
+        if (state is ExpenseLoaded) {
+          return _buildExpensesContainer(state);
+        }
+        return const SizedBox();
+      },
+    );
+  }
+
+  Widget _buildExpensesContainer(ExpenseLoaded state) {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: NotificationListener<ScrollNotification>(
+        onNotification: (notification) {
+          if (notification.metrics.pixels >=
+                  notification.metrics.maxScrollExtent * 0.9 &&
+              !state.hasReachedMax) {
+            if (budget != null) {
+              _expenseBloc.add(LoadMoreExpenses(budgetId: budget!.id));
+            }
+          }
+          return false;
+        },
+        child: ListView.separated(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount:
+              state.hasReachedMax
+                  ? state.expenses.length
+                  : state.expenses.length + 1,
+          separatorBuilder:
+              (_, __) => Divider(height: 1, color: Colors.grey.shade200),
+          itemBuilder: (context, index) {
+            if (index >= state.expenses.length) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+
+            final depense = state.expenses[index];
+
+            return Dismissible(
+              key: ValueKey(depense.id),
+              direction: DismissDirection.startToEnd,
+              background: _buildDeleteBackground(),
+              confirmDismiss: (_) => _confirmDelete(context),
+              onDismissed: (_) {
+                setState(() {
+                  // Supprime immédiatement l'élément de la liste locale
+                  state.expenses.removeAt(index);
+                });
+
+                // Supprimer côté backend
+                _expenseBloc.add(
+                  DeleteExpense(expenseId: depense.id, budgetId: budget!.id),
+                );
+
+                // Mettre à jour le budget après suppression
+                _budgetService.getBudgetByPropertyId(widget.projet.id).then((budgetData) {
+
+                  setState(() {
+                    budget = budgetData;
+                  });
+                });
+              },
+              child: _buildExpenseItem(depense, index),
+            );
+          },
+        ),
+      ),
+    );
+  }
+
+  Widget _buildDeleteBackground() {
+    return Container(
+      padding: const EdgeInsets.only(left: 20),
+      alignment: Alignment.centerLeft,
+      decoration: BoxDecoration(
+        color: Colors.red.shade600,
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Row(
+        children: const [
+          Icon(Icons.delete, color: Colors.white),
+          SizedBox(width: 8),
+          Text(
+            'Supprimer',
+            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w600),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _confirmDelete(BuildContext context) async {
+    return await showDialog<bool>(
+          context: context,
+          barrierDismissible: false,
+          builder:
+              (_) => AlertDialog(
+                title: const Text('Confirmation'),
+                content: const Text(
+                  'Voulez-vous vraiment supprimer cette dépense ?',
+                ),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context, false),
+                    child: const Text('Annuler'),
+                  ),
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                    ),
+                    onPressed: () => Navigator.pop(context, true),
+                    child: Text(
+                      'Supprimer',
+                      style: TextStyle(color: Colors.white),
                     ),
                   ),
                 ],
               ),
-              // Bouton de tri/filtre seulement si on a des dépenses
-              if (depenses.isNotEmpty)
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_vert, color: Colors.grey),
-                  onSelected: (value) {
-                    switch (value) {
-                      case 'date_asc':
-                        _sortExpensesByDate(ascending: true);
-                        break;
-                      case 'date_desc':
-                        _sortExpensesByDate(ascending: false);
-                        break;
-                      case 'amount_asc':
-                        _sortExpensesByAmount(ascending: true);
-                        break;
-                      case 'amount_desc':
-                        _sortExpensesByAmount(ascending: false);
-                        break;
-                    }
-                  },
-                  itemBuilder:
-                      (context) => [
-                        const PopupMenuItem(
-                          value: 'date_desc',
-                          child: Row(
-                            children: [
-                              Icon(Icons.date_range, size: 16),
-                              SizedBox(width: 8),
-                              Text('Plus récent'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'date_asc',
-                          child: Row(
-                            children: [
-                              Icon(Icons.date_range, size: 16),
-                              SizedBox(width: 8),
-                              Text('Plus ancien'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'amount_desc',
-                          child: Row(
-                            children: [
-                              Icon(Icons.attach_money, size: 16),
-                              SizedBox(width: 8),
-                              Text('Montant décroissant'),
-                            ],
-                          ),
-                        ),
-                        const PopupMenuItem(
-                          value: 'amount_asc',
-                          child: Row(
-                            children: [
-                              Icon(Icons.attach_money, size: 16),
-                              SizedBox(width: 8),
-                              Text('Montant croissant'),
-                            ],
-                          ),
-                        ),
-                      ],
-                ),
-            ],
-          ),
-          const SizedBox(height: 16),
-
-          if (depenses.isEmpty)
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 0,
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(40.0),
-                  child: Column(
-                    children: [
-                      Icon(
-                        Icons.receipt_long_outlined,
-                        size: 60,
-                        color: Colors.grey.shade400,
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Aucune dépense disponible',
-                        style: TextStyle(
-                          fontSize: 16,
-                          color: Colors.grey.shade600,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Les dépenses apparaîtront ici une fois ajoutées',
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade500,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            )
-          else
-            Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.grey.withOpacity(0.1),
-                    spreadRadius: 0,
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: depenses.length,
-                separatorBuilder:
-                    (context, index) =>
-                        Divider(height: 1, color: Colors.grey.shade200),
-                itemBuilder: (context, index) {
-                  final depense = depenses[index];
-                  return _buildExpenseItem(depense, index);
-                },
-              ),
-            ),
-        ],
-      ),
-    );
+        ) ??
+        false;
   }
 
   Widget _buildExpenseItem(ExpenseModel depense, int index) {
@@ -766,6 +784,49 @@ class _BudgetTabState extends State<BudgetTab> {
                   size: 20,
                 ),
               ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEmptyExpenses() {
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.1),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(40),
+        child: Column(
+          children: [
+            Icon(
+              Icons.receipt_long_outlined,
+              size: 60,
+              color: Colors.grey.shade400,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              'Aucune dépense disponible',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Les dépenses apparaîtront ici une fois ajoutées',
+              style: TextStyle(fontSize: 14, color: Colors.grey.shade500),
+              textAlign: TextAlign.center,
             ),
           ],
         ),
@@ -945,7 +1006,7 @@ class _BudgetTabState extends State<BudgetTab> {
                           ),
                         ],
                       ),
-                      if (depense.category.isNotEmpty) ...[
+                      /*  if (depense.category.isNotEmpty) ...[
                         const SizedBox(height: 16),
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
@@ -968,34 +1029,42 @@ class _BudgetTabState extends State<BudgetTab> {
                             ),
                           ],
                         ),
-                      ],
+                      ],*/
                     ],
                   ),
                 ),
                 const SizedBox(height: 24),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).pop(),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: HexColor('#FF5C02'),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
+                if (depense.evidence.isNotEmpty)
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                            final url =
+                                APIConstants.API_BASE_URL_IMG +
+                                depense.evidence;
+                            final fileName = depense.evidence;
+                            openFileFromUrl(url, fileName);
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: HexColor('#FF5C02'),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(8),
+                            ),
                           ),
-                        ),
-                        child: const Text(
-                          'Fermer',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.w600,
+                          child: const Text(
+                            'Voir la preuve',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                       ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
               ],
             ),
           ),
@@ -1016,166 +1085,171 @@ class _BudgetTabState extends State<BudgetTab> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.35,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
-              child: Column(
-                children: [
-                  // Handle bar
-                  Container(
-                    margin: EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.35,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    // Handle bar
+                    Container(
+                      margin: EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
 
-                  // Header with close button
-                  Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Budget',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap:
-                              _isSubmitting
-                                  ? null
-                                  : () => Navigator.pop(context),
-                          child: Icon(
-                            Icons.close,
-                            size: 28,
-                            color: HexColor('#231F20'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    // Header with close button
+                    Padding(
+                      padding: EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Montant field
                           Text(
-                            'Montant (FCFA)',
+                            'Budget',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: HexColor('#333333'),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: HexColor('#CBD5E1')),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: TextField(
-                              controller: amountController,
-                              enabled: !_isSubmitting,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              decoration: InputDecoration(
-                                hintText: 'Saisir le montant',
-                                hintStyle: TextStyle(
-                                  color: HexColor('#6B7280'),
-                                ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
-                              ),
-                              style: TextStyle(fontSize: 16),
-                            ),
-                          ),
-
-                          SizedBox(height: 20),
-
-                          // Enregistrer button
-                          Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.only(bottom: 10),
-                            child: ElevatedButton(
-                              onPressed:
-                                  _isSubmitting
-                                      ? null
-                                      : () async {
-                                        await _handleBudgetUpdate(
-                                          amountController,
-                                          setModalState,
-                                          context,
-                                        );
-                                      },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: HexColor('#FF5C02'),
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                              ),
-                              child:
-                                  _isSubmitting
-                                      ? Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 10),
-                                          Text(
-                                            'Mise à jour...',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                      : Text(
-                                        'Mettre à jour',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
-                                        ),
-                                      ),
+                          GestureDetector(
+                            onTap:
+                                _isSubmitting
+                                    ? null
+                                    : () => Navigator.pop(context),
+                            child: Icon(
+                              Icons.close,
+                              size: 28,
+                              color: HexColor('#231F20'),
                             ),
                           ),
                         ],
                       ),
                     ),
-                  ),
-                ],
+
+                    Expanded(
+                      child: Padding(
+                        padding: EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Montant field
+                            Text(
+                              'Montant (FCFA)',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: HexColor('#333333'),
+                              ),
+                            ),
+                            SizedBox(height: 8),
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 10,
+                              ),
+                              decoration: BoxDecoration(
+                                border: Border.all(color: HexColor('#CBD5E1')),
+                                borderRadius: BorderRadius.circular(8),
+                              ),
+                              child: TextField(
+                                controller: amountController,
+                                enabled: !_isSubmitting,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                decoration: InputDecoration(
+                                  hintText: 'Saisir le montant',
+                                  hintStyle: TextStyle(
+                                    color: HexColor('#6B7280'),
+                                  ),
+                                  border: InputBorder.none,
+                                  isDense: true,
+                                  contentPadding: EdgeInsets.zero,
+                                ),
+                                style: TextStyle(fontSize: 16),
+                              ),
+                            ),
+
+                            SizedBox(height: 20),
+
+                            // Enregistrer button
+                            Container(
+                              width: double.infinity,
+                              margin: EdgeInsets.only(bottom: 10),
+                              child: ElevatedButton(
+                                onPressed:
+                                    _isSubmitting
+                                        ? null
+                                        : () async {
+                                          await _handleBudgetUpdate(
+                                            amountController,
+                                            setModalState,
+                                            context,
+                                          );
+                                        },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: HexColor('#FF5C02'),
+                                  padding: EdgeInsets.symmetric(vertical: 16),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(8),
+                                  ),
+                                ),
+                                child:
+                                    _isSubmitting
+                                        ? Row(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            SizedBox(
+                                              width: 20,
+                                              height: 20,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(Colors.white),
+                                              ),
+                                            ),
+                                            SizedBox(width: 10),
+                                            Text(
+                                              'Mise à jour...',
+                                              style: TextStyle(
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w500,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ],
+                                        )
+                                        : Text(
+                                          'Mettre à jour',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.w500,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             );
           },
@@ -1369,262 +1443,274 @@ class _BudgetTabState extends State<BudgetTab> {
     );
   }
 
-  void _showAddExpenseDialog() {
+  Future<bool?> _showAddExpenseDialog() {
     final TextEditingController descriptionController = TextEditingController();
     final TextEditingController amountController = TextEditingController();
-    bool isSubmitting = false;
+    final TextEditingController dateController = TextEditingController();
 
-    showModalBottomSheet(
+    bool isSubmitting = false;
+    DateTime? selectedDate;
+    File? selectedEvidence;
+
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
-              height: MediaQuery.of(context).size.height * 0.45,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+            return Padding(
+              padding: EdgeInsets.only(
+                bottom: MediaQuery.of(context).viewInsets.bottom,
               ),
-              child: Column(
-                children: [
-                  // Handle bar
-                  Container(
-                    margin: EdgeInsets.only(top: 12),
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[400],
-                      borderRadius: BorderRadius.circular(2),
+              child: Container(
+                height: MediaQuery.of(context).size.height * 0.55,
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+                ),
+                child: Column(
+                  children: [
+                    /// Handle bar
+                    Container(
+                      margin: const EdgeInsets.only(top: 12),
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[400],
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
-                  ),
 
-                  // Header with close button
-                  Padding(
-                    padding: EdgeInsets.all(20),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          'Nouvelle dépense',
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
-                          ),
-                        ),
-                        GestureDetector(
-                          onTap:
-                              isSubmitting
-                                  ? null
-                                  : () => Navigator.pop(context),
-                          child: Icon(
-                            Icons.close,
-                            size: 28,
-                            color: HexColor('#231F20'),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  Expanded(
-                    child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                    /// Header
+                    Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          // Description field
-                          Text(
-                            'Description',
+                          const Text(
+                            'Nouvelle dépense',
                             style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: HexColor('#333333'),
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
-                          SizedBox(height: 8),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: HexColor('#CBD5E1')),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: TextField(
-                              controller: descriptionController,
-                              enabled: !isSubmitting,
-                              decoration: InputDecoration(
-                                hintText: 'Ex: Achat de matériaux',
-                                hintStyle: TextStyle(
-                                  color: HexColor('#6B7280'),
+                          IconButton(
+                            onPressed:
+                                isSubmitting
+                                    ? null
+                                    : () => Navigator.pop(context),
+                            icon: const Icon(Icons.close, size: 28),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    /// Content
+                    Expanded(
+                      child: SingleChildScrollView(
+                        padding: const EdgeInsets.symmetric(horizontal: 20),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            /// Description
+                            _label('Description'),
+                            _inputContainer(
+                              child: TextField(
+                                controller: descriptionController,
+                                enabled: !isSubmitting,
+                                decoration: const InputDecoration(
+                                  hintText: 'Ex: Achat de matériaux',
+                                  border: InputBorder.none,
                                 ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
                               ),
-                              style: TextStyle(fontSize: 16),
                             ),
-                          ),
 
-                          SizedBox(height: 16),
+                            const SizedBox(height: 16),
 
-                          // Montant field
-                          Text(
-                            'Montant (FCFA)',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w500,
-                              color: HexColor('#333333'),
-                            ),
-                          ),
-                          SizedBox(height: 8),
-                          Container(
-                            padding: EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 10,
-                            ),
-                            decoration: BoxDecoration(
-                              border: Border.all(color: HexColor('#CBD5E1')),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: TextField(
-                              controller: amountController,
-                              enabled: !isSubmitting,
-                              keyboardType: TextInputType.number,
-                              inputFormatters: [
-                                FilteringTextInputFormatter.digitsOnly,
-                              ],
-                              decoration: InputDecoration(
-                                hintText: 'Ex: 50000',
-                                hintStyle: TextStyle(
-                                  color: HexColor('#6B7280'),
+                            /// Montant
+                            _label('Montant (FCFA)'),
+                            _inputContainer(
+                              child: TextField(
+                                controller: amountController,
+                                enabled: !isSubmitting,
+                                keyboardType: TextInputType.number,
+                                inputFormatters: [
+                                  FilteringTextInputFormatter.digitsOnly,
+                                ],
+                                decoration: const InputDecoration(
+                                  hintText: 'Ex: 50000',
+                                  border: InputBorder.none,
                                 ),
-                                border: InputBorder.none,
-                                isDense: true,
-                                contentPadding: EdgeInsets.zero,
                               ),
-                              style: TextStyle(fontSize: 16),
                             ),
-                          ),
 
-                          SizedBox(height: 24),
+                            const SizedBox(height: 16),
 
-                          // Enregistrer button
-                          Container(
-                            width: double.infinity,
-                            margin: EdgeInsets.only(bottom: 10),
-                            child: ElevatedButton(
+                            /// Date
+                            _label('Date'),
+                            _inputContainer(
+                              child: InkWell(
+                                onTap:
+                                    isSubmitting
+                                        ? null
+                                        : () async {
+                                          final date = await showDatePicker(
+                                            context: context,
+                                            initialDate:
+                                                selectedDate ?? DateTime.now(),
+                                            firstDate: DateTime(2020),
+                                            lastDate: DateTime(2100),
+                                          );
+
+                                          if (date != null) {
+                                            setModalState(() {
+                                              selectedDate = date;
+                                              dateController.text = DateFormat(
+                                                'MM-dd-yyyy',
+                                              ).format(date);
+                                            });
+                                          }
+                                        },
+                                child: IgnorePointer(
+                                  child: TextField(
+                                    controller: dateController,
+                                    decoration: const InputDecoration(
+                                      hintText: 'MM-DD-YYYY',
+                                      border: InputBorder.none,
+                                      suffixIcon: Icon(
+                                        Icons.calendar_today_outlined,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(height: 16),
+
+                            /// Evidence (file)
+                            _label('Evidence (optionnel)'),
+                            OutlinedButton.icon(
                               onPressed:
                                   isSubmitting
                                       ? null
                                       : () async {
-                                        if (descriptionController.text
-                                                .trim()
-                                                .isNotEmpty &&
-                                            amountController.text.isNotEmpty) {
+                                        final result =
+                                            await FilePicker.platform
+                                                .pickFiles();
+
+                                        if (result != null &&
+                                            result.files.single.path != null) {
+                                          setModalState(() {
+                                            selectedEvidence = File(
+                                              result.files.single.path!,
+                                            );
+                                          });
+                                        }
+                                      },
+                              icon: const Icon(Icons.attach_file),
+                              label: Text(
+                                selectedEvidence != null
+                                    ? 'Fichier sélectionné'
+                                    : 'Choisir un fichier',
+                              ),
+                            ),
+
+                            const SizedBox(height: 24),
+
+                            /// Submit
+                            SizedBox(
+                              width: double.infinity,
+                              child: ElevatedButton(
+                                onPressed:
+                                    isSubmitting
+                                        ? null
+                                        : () async {
+                                          if (descriptionController.text
+                                                  .trim()
+                                                  .isEmpty ||
+                                              amountController.text.isEmpty ||
+                                              selectedDate == null) {
+                                            _showSnack(
+                                              'Veuillez remplir tous les champs obligatoires',
+                                              Colors.orange,
+                                            );
+                                            return;
+                                          }
+
                                           setModalState(() {
                                             isSubmitting = true;
                                           });
 
                                           try {
-                                            if (budget != null) {
-                                              await _budgetService.addExpense(
-                                                budget!.id,
-                                                double.parse(
+                                            _expenseBloc.add(
+                                              AddExpense(
+                                                budgetId: budget!.id,
+                                                description:
+                                                    descriptionController.text
+                                                        .trim(),
+                                                amount: double.parse(
                                                   amountController.text,
                                                 ),
-                                                descriptionController.text
-                                                    .trim(),
-                                              );
+                                                date: DateFormat(
+                                                  'MM-dd-yyyy',
+                                                ).format(selectedDate!),
+                                                evidence: selectedEvidence,
+                                              ),
+                                            );
 
-                                              await _loadBudgetData();
+                                            Navigator.of(context).pop(true);
 
-                                              Navigator.of(context).pop();
-                                              ScaffoldMessenger.of(
-                                                context,
-                                              ).showSnackBar(
-                                                SnackBar(
-                                                  content: Text(
-                                                    'Dépense ajoutée avec succès',
-                                                  ),
-                                                  backgroundColor: Color(
-                                                    0xFF4CAF50,
-                                                  ),
-                                                ),
-                                              );
-                                            } else {
-                                              throw Exception(
-                                                'Budget non disponible',
-                                              );
-                                            }
+                                            _showSnack(
+                                              'Dépense ajoutée avec succès',
+                                              Colors.green,
+                                            );
                                           } catch (e) {
                                             setModalState(() {
                                               isSubmitting = false;
                                             });
 
-                                            ScaffoldMessenger.of(
-                                              context,
-                                            ).showSnackBar(
-                                              SnackBar(
-                                                content: Text(
-                                                  'Erreur: ${e.toString()}',
-                                                ),
-                                                backgroundColor: Colors.red,
-                                              ),
+                                            _showSnack(
+                                              'Erreur : ${e.toString()}',
+                                              Colors.red,
                                             );
                                           }
-                                        } else {
-                                          ScaffoldMessenger.of(
-                                            context,
-                                          ).showSnackBar(
-                                            SnackBar(
-                                              content: Text(
-                                                'Veuillez remplir tous les champs',
-                                              ),
-                                              backgroundColor: Colors.orange,
-                                            ),
-                                          );
-                                        }
-                                      },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: HexColor('#1A365D'),
-                                padding: EdgeInsets.symmetric(vertical: 16),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(8),
+                                        },
+                                style: ElevatedButton.styleFrom(
+                                  padding: const EdgeInsets.symmetric(
+                                    vertical: 16,
+                                  ),
+                                  backgroundColor: HexColor(
+                                    APIConstants.primaryColorValue,
+                                  ),
                                 ),
+                                child:
+                                    isSubmitting
+                                        ? const SizedBox(
+                                          height: 20,
+                                          width: 20,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: Colors.white,
+                                          ),
+                                        )
+                                        : const Text(
+                                          'Enregistrer',
+                                          style: TextStyle(
+                                            fontSize: 16,
+                                            color: Colors.white,
+                                          ),
+                                        ),
                               ),
-                              child:
-                                  isSubmitting
-                                      ? SizedBox(
-                                        height: 20,
-                                        width: 20,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor:
-                                              AlwaysStoppedAnimation<Color>(
-                                                Colors.white,
-                                              ),
-                                        ),
-                                      )
-                                      : Text(
-                                        'Enregistrer',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
-                                        ),
-                                      ),
                             ),
-                          ),
-                        ],
+                            SizedBox(height: 10),
+                          ],
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             );
           },
@@ -1653,5 +1739,29 @@ class _BudgetTabState extends State<BudgetTab> {
 
   String _formatDate(DateTime date) {
     return '${date.day.toString().padLeft(2, '0')}/${date.month.toString().padLeft(2, '0')}/${date.year}';
+  }
+
+  Widget _label(String text) {
+    return Text(
+      text,
+      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+    );
+  }
+
+  Widget _inputContainer({required Widget child}) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        border: Border.all(color: HexColor('#CBD5E1')),
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: child,
+    );
+  }
+
+  void _showSnack(String message, Color color) {
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message), backgroundColor: color));
   }
 }

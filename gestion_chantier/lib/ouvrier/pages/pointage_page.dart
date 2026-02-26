@@ -19,6 +19,7 @@ import '../bloc/worker/worker_presence_history_bloc.dart';
 import '../bloc/worker/worker_presence_history_event.dart';
 import '../bloc/worker/worker_presence_history_state.dart';
 import '../services/location_service.dart';
+import '../utils/ToastUtils.dart';
 import 'qr_scanner_page.dart';
 
 class PointagePage extends StatefulWidget {
@@ -50,9 +51,9 @@ class _PointagePageState extends State<PointagePage> {
           ),
           Expanded(
             child:
-                _selectedTab == 0
-                    ? _PointageDuJourCard(onVoirPlus: _goToHistorique)
-                    : const _HistoriqueTab(),
+            _selectedTab == 0
+                ? _PointageDuJourCard(onVoirPlus: _goToHistorique)
+                : const _HistoriqueTab(),
           ),
         ],
       ),
@@ -63,6 +64,7 @@ class _PointagePageState extends State<PointagePage> {
 class _PointageHeaderTabs extends StatelessWidget {
   final int selected;
   final ValueChanged<int> onChanged;
+
   const _PointageHeaderTabs({required this.selected, required this.onChanged});
 
   @override
@@ -105,9 +107,9 @@ class _PointageHeaderTabs extends StatelessWidget {
                           Icon(
                             Icons.qr_code_2,
                             color:
-                                selected == 0
-                                    ? Colors.white
-                                    : const Color(0xFFBFC5D2),
+                            selected == 0
+                                ? Colors.white
+                                : const Color(0xFFBFC5D2),
                             size: 22,
                           ),
                           const SizedBox(width: 6),
@@ -115,9 +117,9 @@ class _PointageHeaderTabs extends StatelessWidget {
                             'Pointage du jour',
                             style: TextStyle(
                               color:
-                                  selected == 0
-                                      ? Colors.white
-                                      : const Color(0xFFBFC5D2),
+                              selected == 0
+                                  ? Colors.white
+                                  : const Color(0xFFBFC5D2),
                               fontWeight: FontWeight.bold,
                               fontSize: 17,
                             ),
@@ -131,7 +133,7 @@ class _PointageHeaderTabs extends StatelessWidget {
                         width: 60,
                         decoration: BoxDecoration(
                           color:
-                              selected == 0 ? Colors.white : Colors.transparent,
+                          selected == 0 ? Colors.white : Colors.transparent,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -151,9 +153,9 @@ class _PointageHeaderTabs extends StatelessWidget {
                           Icon(
                             Icons.history,
                             color:
-                                selected == 1
-                                    ? Colors.white
-                                    : const Color(0xFFBFC5D2),
+                            selected == 1
+                                ? Colors.white
+                                : const Color(0xFFBFC5D2),
                             size: 22,
                           ),
                           const SizedBox(width: 6),
@@ -161,9 +163,9 @@ class _PointageHeaderTabs extends StatelessWidget {
                             'Historiques',
                             style: TextStyle(
                               color:
-                                  selected == 1
-                                      ? Colors.white
-                                      : const Color(0xFFBFC5D2),
+                              selected == 1
+                                  ? Colors.white
+                                  : const Color(0xFFBFC5D2),
                               fontWeight: FontWeight.bold,
                               fontSize: 17,
                             ),
@@ -177,7 +179,7 @@ class _PointageHeaderTabs extends StatelessWidget {
                         width: 60,
                         decoration: BoxDecoration(
                           color:
-                              selected == 1 ? Colors.white : Colors.transparent,
+                          selected == 1 ? Colors.white : Colors.transparent,
                           borderRadius: BorderRadius.circular(2),
                         ),
                       ),
@@ -199,6 +201,7 @@ class _TabButton extends StatelessWidget {
   final String label;
   final bool selected;
   final VoidCallback onTap;
+
   const _TabButton({
     required this.icon,
     required this.label,
@@ -234,22 +237,25 @@ class _TabButton extends StatelessWidget {
 
 class _PointageDuJourCard extends StatelessWidget {
   final VoidCallback onVoirPlus;
+
   const _PointageDuJourCard({Key? key, required this.onVoirPlus})
-    : super(key: key);
+      : super(key: key);
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UserNameSectionBloc>(
       create:
           (_) =>
-              UserNameSectionBloc(authRepository: AuthRepository())
-                ..add(LoadCurrentUserEvent()),
+      UserNameSectionBloc(authRepository: AuthRepository())
+        ..add(LoadCurrentUserEvent()),
       child: BlocBuilder<UserNameSectionBloc, UserNameSectionState>(
         builder: (context, userState) {
           if (userState is UserNameLoaded) {
             final workerId = userState.user.id;
             return BlocProvider<WorkerCheckBloc>(
               create:
-                  (_) => WorkerCheckBloc(
+                  (_) =>
+                  WorkerCheckBloc(
                     repository: WorkerRepository(
                       workerService: WorkerService(),
                     ),
@@ -271,10 +277,12 @@ class _PointageDuJourCard extends StatelessWidget {
 class _PointageDuJourCardContent extends StatefulWidget {
   final int workerId;
   final VoidCallback onVoirPlus;
+
   const _PointageDuJourCardContent({
     required this.workerId,
     required this.onVoirPlus,
   });
+
   @override
   State<_PointageDuJourCardContent> createState() =>
       _PointageDuJourCardContentState();
@@ -288,15 +296,18 @@ class _PointageDuJourCardContentState
       providers: [
         BlocProvider<WorkerCheckBloc>(
           create:
-              (_) => WorkerCheckBloc(
+              (_) =>
+              WorkerCheckBloc(
                 repository: WorkerRepository(workerService: WorkerService()),
               ),
         ),
         BlocProvider<WorkerPresenceHistoryBloc>(
           create:
-              (_) => WorkerPresenceHistoryBloc(
-                repository: WorkerRepository(workerService: WorkerService()),
-              )..add(LoadWorkerPresenceHistoryEvent(widget.workerId)),
+              (_) =>
+          WorkerPresenceHistoryBloc(
+            repository: WorkerRepository(workerService: WorkerService()),
+          )
+            ..add(LoadWorkerPresenceHistoryEvent(workerId:  widget.workerId)),
         ),
       ],
       child: BlocListener<WorkerCheckBloc, WorkerCheckState>(
@@ -305,12 +316,12 @@ class _PointageDuJourCardContentState
             // Rafraîchir la liste après un check
             BlocProvider.of<WorkerPresenceHistoryBloc>(
               context,
-            ).add(LoadWorkerPresenceHistoryEvent(widget.workerId));
+            ).add(LoadWorkerPresenceHistoryEvent(workerId:  widget.workerId));
           }
         },
         child: BlocBuilder<
-          WorkerPresenceHistoryBloc,
-          WorkerPresenceHistoryState
+            WorkerPresenceHistoryBloc,
+            WorkerPresenceHistoryState
         >(
           builder: (context, state) {
             if (state is WorkerPresenceHistoryLoading) {
@@ -333,7 +344,10 @@ class _PointageDuJourCardContentState
                     const SizedBox(height: 16),
                     Center(
                       child: Container(
-                        width: MediaQuery.of(context).size.width * 0.92,
+                        width: MediaQuery
+                            .of(context)
+                            .size
+                            .width * 0.92,
                         padding: const EdgeInsets.symmetric(
                           vertical: 32,
                           horizontal: 0,
@@ -345,45 +359,77 @@ class _PointageDuJourCardContentState
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F7FA),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Icon(
-                                Icons.qr_code_2,
-                                color: HexColor('#1A365D'),
-                                size: 56,
-                              ),
+
+                            BlocBuilder<WorkerCheckBloc, WorkerCheckState>(
+                              builder: (context, checkState) {
+                                return
+                                  InkWell(
+                                    child:  Container(
+                                      width: 90,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F7FA),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: Icon(
+                                        Icons.qr_code_2,
+                                        color: HexColor('#1A365D'),
+                                        size: 56,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              BlocProvider.value(
+                                                value: context.read<
+                                                    WorkerCheckBloc>(),
+                                                child: QRScannerPage(
+                                                    workerId: widget.workerId),
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  );
+
+                              },
                             ),
+
                             const SizedBox(height: 24),
                             Text(
-                              "Pointé aujourd'hui à ${sessions.isNotEmpty ? sessions.first.formattedCheckIn : '--:--'}",
+                              "Pointé aujourd'hui à ${sessions.isNotEmpty
+                                  ? sessions.first.formattedCheckIn
+                                  : '--:--'}",
                               textAlign: TextAlign.center,
                               style: const TextStyle(
                                 color: Color(0xFF8A98A8),
                                 fontSize: 16,
                               ),
                             ),
-                            const SizedBox(height: 24),
+
+
+                           /* const SizedBox(height: 24),
                             BlocBuilder<WorkerCheckBloc, WorkerCheckState>(
                               builder: (context, checkState) {
-                                return SizedBox(
-                                  width: 260,
-                                  height: 56,
-                                  child: ElevatedButton.icon(
-                                    style: ElevatedButton.styleFrom(
-                                      backgroundColor: Color(0xFFFF5C02),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.all(
-                                          Radius.circular(28),
+                                return
+
+
+                                  SizedBox(
+                                    width: 260,
+                                    height: 56,
+                                    child: ElevatedButton.icon(
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Color(0xFFFF5C02),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.all(
+                                            Radius.circular(28),
+                                          ),
                                         ),
+                                        elevation: 0,
                                       ),
-                                      elevation: 0,
-                                    ),
-                                    onPressed:
+
+                                       onPressed:
                                         checkState is WorkerCheckLoading
                                             ? null
                                             : () {
@@ -395,33 +441,36 @@ class _PointageDuJourCardContentState
                                                 ),
                                               );
                                             },
-                                    icon:
-                                        checkState is WorkerCheckLoading
-                                            ? const SizedBox(
-                                              width: 22,
-                                              height: 22,
-                                              child: CircularProgressIndicator(
-                                                color: Colors.white,
-                                                strokeWidth: 2.5,
-                                              ),
-                                            )
-                                            : const Icon(
-                                              Icons.qr_code_2,
-                                              color: Colors.white,
-                                              size: 24,
-                                            ),
-                                    label: const Text(
-                                      'Scanner QR Code',
-                                      style: TextStyle(
+                                      icon:
+                                      checkState is WorkerCheckLoading
+                                          ? const SizedBox(
+                                        width: 22,
+                                        height: 22,
+                                        child: CircularProgressIndicator(
+                                          color: Colors.white,
+                                          strokeWidth: 2.5,
+                                        ),
+                                      )
+                                          : const Icon(
+                                        Icons.qr_code_2,
                                         color: Colors.white,
-                                        fontWeight: FontWeight.bold,
-                                        fontSize: 17,
+                                        size: 24,
+                                      ),
+                                      label: const Text(
+                                        'Scanner QR Code',
+                                        style: TextStyle(
+                                          color: Colors.white,
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 17,
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                );
+                                  )
+
+
+                                ;
                               },
-                            ),
+                            ),*/
                           ],
                         ),
                       ),
@@ -451,7 +500,7 @@ class _PointageDuJourCardContentState
                                   padding: EdgeInsets.zero,
                                   minimumSize: Size(0, 0),
                                   tapTargetSize:
-                                      MaterialTapTargetSize.shrinkWrap,
+                                  MaterialTapTargetSize.shrinkWrap,
                                 ),
                                 child: const Text(
                                   'Voir plus',
@@ -540,7 +589,10 @@ class _PointageDuJourCardContentState
                   children: [
                     Center(
                       child: Container(
-                        width: MediaQuery.of(context).size.width * 0.92,
+                        width: MediaQuery
+                            .of(context)
+                            .size
+                            .width * 0.92,
                         padding: const EdgeInsets.symmetric(
                           vertical: 32,
                           horizontal: 0,
@@ -552,19 +604,42 @@ class _PointageDuJourCardContentState
                         child: Column(
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            Container(
-                              width: 90,
-                              height: 90,
-                              decoration: BoxDecoration(
-                                color: const Color(0xFFF5F7FA),
-                                borderRadius: BorderRadius.circular(18),
-                              ),
-                              child: Icon(
-                                Icons.qr_code_2,
-                                color: HexColor('#1A365D'),
-                                size: 56,
-                              ),
+                            BlocBuilder<WorkerCheckBloc, WorkerCheckState>(
+                              builder: (context, checkState) {
+                                return
+                                  InkWell(
+                                    child:  Container(
+                                      width: 90,
+                                      height: 90,
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFFF5F7FA),
+                                        borderRadius: BorderRadius.circular(18),
+                                      ),
+                                      child: Icon(
+                                        Icons.qr_code_2,
+                                        color: HexColor('#1A365D'),
+                                        size: 56,
+                                      ),
+                                    ),
+                                    onTap: () {
+                                      Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder: (_) =>
+                                              BlocProvider.value(
+                                                value: context.read<
+                                                    WorkerCheckBloc>(),
+                                                child: QRScannerPage(
+                                                    workerId: widget.workerId),
+                                              ),
+                                        ),
+                                      );
+                                    },
+                                  );
+
+                              },
                             ),
+
                             const SizedBox(height: 24),
                             const Text(
                               "Pointé aujourd'hui à --:--",
@@ -574,7 +649,7 @@ class _PointageDuJourCardContentState
                                 fontSize: 16,
                               ),
                             ),
-                            const SizedBox(height: 24),
+                           /* const SizedBox(height: 24),
                             SizedBox(
                               width: 260,
                               height: 56,
@@ -589,11 +664,15 @@ class _PointageDuJourCardContentState
                                   elevation: 0,
                                 ),
                                 onPressed: () {
-                                  Navigator.of(context).push(
+                                  Navigator.push(
+                                    context,
                                     MaterialPageRoute(
-                                      builder:
-                                          (context) => QRScannerPage(
-                                            workerId: widget.workerId,
+                                      builder: (_) =>
+                                          BlocProvider.value(
+                                            value: context.read<
+                                                WorkerCheckBloc>(),
+                                            child: QRScannerPage(
+                                                workerId: widget.workerId),
                                           ),
                                     ),
                                   );
@@ -612,7 +691,7 @@ class _PointageDuJourCardContentState
                                   ),
                                 ),
                               ),
-                            ),
+                            ),*/
                           ],
                         ),
                       ),
@@ -622,8 +701,7 @@ class _PointageDuJourCardContentState
                       children: [
                         Padding(
                           padding: const EdgeInsets.all(15.0),
-                          child: Expanded(
-                            child: Text(
+                          child: Text(
                               'Historiques de présence',
                               style: TextStyle(
                                 color: HexColor('#1A365D'),
@@ -631,12 +709,15 @@ class _PointageDuJourCardContentState
                                 fontSize: 18,
                               ),
                             ),
-                          ),
+
                         ),
                       ],
                     ),
                     Container(
-                      width: MediaQuery.of(context).size.width * 0.92,
+                      width: MediaQuery
+                          .of(context)
+                          .size
+                          .width * 0.92,
                       padding: const EdgeInsets.symmetric(
                         vertical: 18,
                         horizontal: 18,
@@ -701,14 +782,17 @@ class _PointageDuJourCardContentState
       'déc.',
     ];
     final weekDays = ['Dim.', 'Lun.', 'Mar.', 'Mer.', 'Jeu.', 'Ven.', 'Sam.'];
-    return '${weekDays[now.weekday % 7]} ${now.day.toString().padLeft(2, '0')} ${months[now.month]} ${now.year}';
+    return '${weekDays[now.weekday % 7]} ${now.day.toString().padLeft(
+        2, '0')} ${months[now.month]} ${now.year}';
   }
 }
 
 class _SessionCard extends StatelessWidget {
   final String? entree;
   final String? sortie;
+
   const _SessionCard({this.entree, this.sortie});
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -806,27 +890,30 @@ class _SessionCard extends StatelessWidget {
 // Nouveau widget dynamique pour l'historique
 class _HistoriqueTab extends StatelessWidget {
   const _HistoriqueTab();
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UserNameSectionBloc>(
       create:
           (_) =>
-              UserNameSectionBloc(authRepository: AuthRepository())
-                ..add(LoadCurrentUserEvent()),
+      UserNameSectionBloc(authRepository: AuthRepository())
+        ..add(LoadCurrentUserEvent()),
       child: BlocBuilder<UserNameSectionBloc, UserNameSectionState>(
         builder: (context, userState) {
           if (userState is UserNameLoaded) {
             final workerId = userState.user.id;
             return BlocProvider<WorkerMonthlySummaryBloc>(
               create:
-                  (_) => WorkerMonthlySummaryBloc(
-                    repository: WorkerRepository(
-                      workerService: WorkerService(),
-                    ),
-                  )..add(LoadWorkerMonthlySummaryEvent(workerId)),
+                  (_) =>
+              WorkerMonthlySummaryBloc(
+                repository: WorkerRepository(
+                  workerService: WorkerService(),
+                ),
+              )
+                ..add(LoadWorkerMonthlySummaryEvent(workerId)),
               child: BlocBuilder<
-                WorkerMonthlySummaryBloc,
-                WorkerMonthlySummaryState
+                  WorkerMonthlySummaryBloc,
+                  WorkerMonthlySummaryState
               >(
                 builder: (context, state) {
                   if (state is WorkerMonthlySummaryLoading) {
@@ -865,7 +952,9 @@ class _HistoriqueTab extends StatelessWidget {
 
 class _HistoriqueList extends StatelessWidget {
   final MonthlySummaryModel summary;
+
   const _HistoriqueList({required this.summary});
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
@@ -907,6 +996,7 @@ class _HistoriqueList extends StatelessWidget {
                   onTap: () async {
                     // Parse la date du format "16-07-2025" ou "2025-07-16" selon l'API
                     DateTime? selectedDate;
+
                     try {
                       final parts = day.day.split('-');
                       if (parts.length == 3) {
@@ -915,37 +1005,56 @@ class _HistoriqueList extends StatelessWidget {
                           '${parts[2]}-${parts[1]}-${parts[0]}',
                         );
                       }
-                    } catch (_) {}
-                    if (selectedDate == null) return;
+                    } catch (e) {
+                      print("Error parsing date: $e");
+                      ToastUtils.show("Erreur de format de date");
+                      return; // Retourner tôt si la date est invalide
+                    }
+
+                    if (selectedDate == null) {
+                      ToastUtils.show("Date sélectionnée invalide");
+                      return;
+                    }
+
                     final workerId =
-                        (BlocProvider.of<UserNameSectionBloc>(context).state
-                                as UserNameLoaded)
+                        (BlocProvider.of<UserNameSectionBloc>(context).state as UserNameLoaded)
                             .user
                             .id;
-                    // Charge les sessions de la journée
-                    final repo = WorkerRepository(
-                      workerService: WorkerService(),
-                    );
-                    final history = await repo.getPresenceHistory(workerId);
-                    final sessions =
-                        history.logs.where((log) {
-                          // On suppose que checkInTime contient [h, m, s, ...] et la date est celle du jour sélectionné
-                          // Il faut une info de date dans PresenceLog, sinon on ne peut pas filtrer précisément
-                          // Ici, on suppose que tous les logs du jour sont renvoyés (sinon il faut adapter le modèle)
-                          return true; // à adapter si besoin
-                        }).toList();
-                    final total = day.hoursWorked;
-                    Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder:
-                            (_) => HistoriqueDetailPage(
-                              date: day.day,
-                              sessions: sessions,
-                              total: total,
-                            ),
-                      ),
-                    );
+
+                    try {
+                      // Charge les sessions de la journée
+                      final repo = WorkerRepository(workerService: WorkerService());
+                      final history = await repo.getPresenceHistory(workerId: workerId, date: day.day);
+
+                      final sessions = history.logs.where((log) {
+                        // On suppose que checkInTime contient [h, m, s, ...] et la date est celle du jour sélectionné
+                        // Il faut une info de date dans PresenceLog, sinon on ne peut pas filtrer précisément
+                        // Ici, on suppose que tous les logs du jour sont renvoyés
+                        return true; // à adapter si besoin
+                      }).toList();
+
+                      // Vérification si des sessions ont été trouvées
+                      if (sessions.isEmpty) {
+                        ToastUtils.show("Journée non travaillée");
+                      }
+
+                      final total = day.hoursWorked;
+                      Navigator.of(context).push(
+                        MaterialPageRoute(
+                          builder: (_) => HistoriqueDetailPage(
+                            date: day.day,
+                            sessions: sessions,
+                            total: total,
+                          ),
+                        ),
+                      );
+
+                    } catch (e) {
+                      print("Error fetching presence history: $e");
+                      ToastUtils.show("Journée non travaillée");
+                    }
                   },
+
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.white,
@@ -1023,11 +1132,13 @@ class HistoriqueDetailPage extends StatelessWidget {
   final String date;
   final List sessions;
   final String total;
+
   const HistoriqueDetailPage({
     required this.date,
     required this.sessions,
     required this.total,
   });
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -1263,7 +1374,7 @@ class LocationTestWidget extends StatefulWidget {
   final int workerId;
 
   const LocationTestWidget({Key? key, required this.workerId})
-    : super(key: key);
+      : super(key: key);
 
   @override
   State<LocationTestWidget> createState() => _LocationTestWidgetState();
@@ -1362,9 +1473,9 @@ class _LocationTestWidgetState extends State<LocationTestWidget> {
             style: TextStyle(
               fontSize: 14,
               color:
-                  _locationStatus.contains('Erreur')
-                      ? Colors.red
-                      : Colors.green,
+              _locationStatus.contains('Erreur')
+                  ? Colors.red
+                  : Colors.green,
             ),
           ),
           if (_latitude.isNotEmpty && _longitude.isNotEmpty) ...[

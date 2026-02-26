@@ -17,14 +17,16 @@ class RealEstateService {
     try {
       final response = await _apiService.dio.post(
         '/realestate/search-by-promoter',
-        data: {'promoterId': promoterId},
+        data: {'promoterId': promoterId,  "name": ""},
         options: Options(
           headers: {'accept': '*/*', 'Content-Type': 'application/json'},
         ),
       );
 
       if (response.statusCode == 200) {
-        final List<dynamic> data = response.data['content'] ?? response.data;
+
+
+        final data = response.data['content'] ?? response.data;
         return RealEstateModel.fromJsonList(data);
       } else {
         throw Exception(
@@ -34,6 +36,7 @@ class RealEstateService {
     } on DioException catch (e) {
       throw _handleDioException(e);
     } catch (e) {
+      print(e);
       throw Exception('Erreur inattendue: $e');
     }
   }

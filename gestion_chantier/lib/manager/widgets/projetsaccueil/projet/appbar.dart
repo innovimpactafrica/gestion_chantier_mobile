@@ -5,6 +5,7 @@ class CustomProjectAppBar extends StatelessWidget
     implements PreferredSizeWidget {
   final String title;
   final VoidCallback? onBackPressed;
+  final VoidCallback? onQRCodePressed;
   final List<Widget>? actions;
   final Color? backgroundColor;
   final Color? textColor;
@@ -20,11 +21,13 @@ class CustomProjectAppBar extends StatelessWidget
     this.textColor,
     this.elevation,
     this.automaticallyImplyLeading = true,
+    this.onQRCodePressed,
   });
 
   @override
   Widget build(BuildContext context) {
     return Container(
+      width: MediaQuery.of(context).size.width,
       color: backgroundColor ?? HexColor('#1A365D'),
       padding: EdgeInsets.only(
         top: MediaQuery.of(context).padding.top + 10,

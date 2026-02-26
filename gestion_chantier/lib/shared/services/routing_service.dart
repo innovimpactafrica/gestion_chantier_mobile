@@ -36,18 +36,29 @@ import 'package:gestion_chantier/bet/bloc/home/home_event.dart' as bet_event;
 
 import 'package:gestion_chantier/ouvrier/pages/ouvrier_main_screen.dart';
 
+import '../../manager/services/SharedPreferencesService.dart';
+
 class RoutingService {
-  static void routeByProfile(BuildContext context, String profile) {
+   static SharedPreferencesService _sharedPreferencesService =
+  SharedPreferencesService();
+  static void routeByProfile(BuildContext context, String profile) async{
     final profil = profile.toLowerCase();
+
+
+     _sharedPreferencesService.saveValue("profil", profil);
+
+
+
 
     if (profil == 'worker' || profil == 'ouvrier') {
       _routeToOuvrier(context);
     } else if (profil == 'moa') {
-      _routeToMoa(context);
+      _routeToManager(context);
+    //  _routeToMoa(context);
     } else if (profil == 'fournisseur') {
-      _routeToFournisseur(context);
+    //  _routeToFournisseur(context);
     } else if (profil == 'bet') {
-      _routeToBet(context);
+     // _routeToBet(context);
     } else {
       _routeToManager(context);
     }

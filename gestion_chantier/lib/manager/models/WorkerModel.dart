@@ -26,6 +26,7 @@ class WorkerModel {
   final List<AuthorityModel> authorities;
   final String username;
   final bool enabled;
+  final bool present;
 
   WorkerModel({
     required this.id,
@@ -52,6 +53,7 @@ class WorkerModel {
     required this.authorities,
     required this.username,
     required this.enabled,
+    required this.present,
   });
 
   factory WorkerModel.fromJson(Map<String, dynamic> json) {
@@ -81,6 +83,7 @@ class WorkerModel {
         authorities: _parseAuthorities(json['authorities']),
         username: json['username']?.toString() ?? '',
         enabled: json['enabled'] == true,
+        present: json['present'] ??false,
       );
     } catch (e) {
       print('Error parsing WorkerModel: $e');

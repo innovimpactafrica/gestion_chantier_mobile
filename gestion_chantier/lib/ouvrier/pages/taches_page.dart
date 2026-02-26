@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_chantier/ouvrier/utils/DottedBorderPainter.dart';
+import '../../shared/utils/DateFormatUtils.dart';
 import '../bloc/username/user_name_section_bloc.dart';
 import '../bloc/username/user_name_section_event.dart';
 import '../bloc/username/user_name_section_state.dart';
@@ -13,9 +14,12 @@ import '../repository/task_repository.dart';
 import '../services/task_service.dart';
 import '../models/TaskModel.dart';
 import 'package:url_launcher/url_launcher.dart';
+import '../utils/ToastUtils.dart';
 import '../utils/constant.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+
+import '../widgets/task/ImageGridViewer.dart';
 
 class TachesPage extends StatefulWidget {
   const TachesPage({Key? key}) : super(key: key);
@@ -163,16 +167,7 @@ List<TaskModel> _filterTasks(List<TaskModel> tasks, int selectedFilter) {
 }
 
 String _formatTaskDate(TaskModel task) {
-  if (task.startDate != null && task.endDate != null) {
-    final start = task.startDate!;
-    final end = task.endDate!;
-    String startStr =
-        "${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}/${start.year}";
-    String endStr =
-        "${end.day.toString().padLeft(2, '0')}/${end.month.toString().padLeft(2, '0')}/${end.year}";
-    return "$startStr - $endStr";
-  }
-  return '';
+  return DateFormatUtils.formatPeriod(task.startDate, task.endDate);
 }
 
 String _mapStatus(String status) {
@@ -249,6 +244,7 @@ IconData? _actionIcon(String status) {
 
 class _TachesHeader extends StatelessWidget {
   const _TachesHeader();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -267,14 +263,14 @@ class _TachesHeader extends StatelessWidget {
             ),
           ),
           const Spacer(),
-          IconButton(
+          /*  IconButton(
             icon: const Icon(Icons.search, color: Colors.white, size: 28),
             onPressed: () {},
           ),
           IconButton(
             icon: const Icon(Icons.tune, color: Colors.white, size: 28),
             onPressed: () {},
-          ),
+          ),*/
         ],
       ),
     );
@@ -285,6 +281,7 @@ class _TachesFilters extends StatelessWidget {
   final List<String> filters;
   final int selected;
   final ValueChanged<int> onChanged;
+
   const _TachesFilters({
     required this.filters,
     required this.selected,
@@ -339,6 +336,7 @@ class _TacheCard extends StatelessWidget {
   final IconData? actionIcon;
   final TaskModel? taskModel;
   final VoidCallback? onStatusChanged;
+
   const _TacheCard({
     required this.title,
     required this.time,
@@ -382,8 +380,8 @@ class _TacheCard extends StatelessWidget {
     return GestureDetector(
       onTap:
           taskModel != null
-              ? () {
-                showModalBottomSheet(
+              ? () async {
+                final result = await showModalBottomSheet<bool>(
                   context: context,
                   isScrollControlled: true,
                   shape: const RoundedRectangleBorder(
@@ -397,8 +395,32 @@ class _TacheCard extends StatelessWidget {
                         onStatusChanged: onStatusChanged,
                       ),
                 );
+
+                // result == true si la tâche a été changée
+                if (result == true) {
+                  print("Tâche modifiée !");
+                }
               }
               : null,
+      /* onTap:
+          taskModel != null
+              ? () {
+                showModalBottomSheet(
+                  context: context,
+                  isScrollControlled: true,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(24),
+                    ),
+                  ),
+                  builder:
+                      (_) => TaskDetailBottomSheet(
+                        task: taskModel!,
+                        onStatusChanged: onStatusChanged,
+                      ),
+                );
+              }
+              : null,*/
       child: Container(
         padding: const EdgeInsets.all(20),
         decoration: BoxDecoration(
@@ -568,6 +590,7 @@ class _TacheCard extends StatelessWidget {
 class TaskDetailBottomSheet extends StatefulWidget {
   final TaskModel task;
   final VoidCallback? onStatusChanged;
+
   const TaskDetailBottomSheet({
     Key? key,
     required this.task,
@@ -631,7 +654,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
             ),
       );
       if (result != null) {
-        await _changeStatus(context);
+        // await _changeStatus(context);
         // Ici tu peux utiliser result.comment et result.photos pour l'upload
         print('Commentaire: ${result.comment}');
         print('Photos: ${result.photos}');
@@ -639,26 +662,39 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
     }
   }
 
-  Future<void> _changeStatus(BuildContext context) async {
+  Future<void> _changeStatus() async {
     setState(() {
       _loading = true;
       _error = null;
     });
-    String nextStatus = _task.status == 'TODO' ? 'IN_PROGRESS' : 'DONE';
+
+    final String nextStatus = _task.status == 'TODO' ? 'IN_PROGRESS' : 'DONE';
+
     try {
       await TaskService().updateTaskStatus(_task.id, nextStatus);
-      Navigator.of(context).pop();
-      if (widget.onStatusChanged != null) {
-        widget.onStatusChanged!();
-      }
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Statut mis à jour !')));
+
+      widget.onStatusChanged?.call();
+
+      final String message =
+          nextStatus == 'IN_PROGRESS'
+              ? 'Tâche démarrée'
+              : nextStatus == 'DONE'
+              ? 'Tâche terminée'
+              : 'Statut inconnu';
+
+      ToastUtils.show(message);
+
+      // ⚡ On ferme le BottomSheet en renvoyant true
+      if (mounted) Navigator.pop(context, true);
     } catch (e) {
+      if (!mounted) return;
+      ToastUtils.show("Erreur lors du changement de statut");
       setState(() {
         _error = 'Erreur lors du changement de statut';
       });
     } finally {
+      if (!mounted) return;
+
       setState(() {
         _loading = false;
       });
@@ -773,19 +809,35 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                 ),
                 const SizedBox(height: 12),
                 Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    const Icon(Icons.access_time, color: Color(0xFFFF5C02)),
-                    const SizedBox(width: 8),
-                    const Text(
-                      'Horaires',
-                      style: TextStyle(color: Color(0xFF8A98A8), fontSize: 16),
-                    ),
-                    const Spacer(),
-                    Text(
-                      _formatTaskDate(_task),
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                        fontSize: 16,
+
+
+                   Container(
+                     width: 100,
+                     child: Row(
+                       children: [
+                         const Icon(Icons.date_range, color: Color(0xFFFF5C02)),
+                         const SizedBox(width: 8),
+                         const Text(
+                           'Date',
+                           style: TextStyle(
+                             color: Color(0xFF8A98A8),
+                             fontSize: 16,
+                           ),
+                         ),
+                       ],
+                     ),
+                   ),
+
+                    Expanded(
+                      child: Text(
+                        _formatTaskDate(_task),
+                        textAlign: TextAlign.end,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.normal,
+                          fontSize: 14,
+                        ),
                       ),
                     ),
                   ],
@@ -829,15 +881,16 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                     ),
                   ],
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Documents',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 17,
-                    color: Color(0xFF8A98A8),
+                if (_task.documents.isNotEmpty) const SizedBox(height: 24),
+                if (_task.documents.isNotEmpty)
+                  const Text(
+                    'Documents',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      color: Color(0xFF8A98A8),
+                    ),
                   ),
-                ),
                 const SizedBox(height: 10),
                 ..._task.documents
                     .map((doc) => _DocumentTile(doc: doc))
@@ -851,6 +904,20 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                       style: const TextStyle(color: Colors.red),
                     ),
                   ),
+
+                if (_task.pictures.isNotEmpty) const SizedBox(height: 24),
+                if (_task.pictures.isNotEmpty)
+                  const Text(
+                    'Images',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 17,
+                      color: Color(0xFF8A98A8),
+                    ),
+                  ),
+
+                ImageGridViewer(imageUrls: _task.pictures),
+                const SizedBox(height: 30),
                 if ((isInProgress || isTodo))
                   SizedBox(
                     width: double.infinity,
@@ -862,10 +929,14 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                         ),
                         padding: const EdgeInsets.symmetric(vertical: 18),
                       ),
-                      onPressed:
-                          _loading
+                      onPressed: () {
+                        _changeStatus();
+                      },
+
+                      /* _loading
                               ? null
-                              : () => _confirmAndChangeStatus(context),
+                              : () => _changeStatus,*/
+                      // _confirmAndChangeStatus(context),
                       icon:
                           _loading
                               ? const SizedBox(
@@ -986,6 +1057,7 @@ class TaskActionConfirmBottomSheet extends StatelessWidget {
 
 class _DocumentTile extends StatelessWidget {
   final TaskDocument doc;
+
   const _DocumentTile({Key? key, required this.doc}) : super(key: key);
 
   @override
@@ -1079,6 +1151,7 @@ String _getFakeFileSize(String filePath) {
 class TaskActionCompleteResult {
   final String comment;
   final List<File> photos;
+
   TaskActionCompleteResult({required this.comment, required this.photos});
 }
 

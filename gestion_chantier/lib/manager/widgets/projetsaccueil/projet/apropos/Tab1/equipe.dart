@@ -7,6 +7,9 @@ import 'package:gestion_chantier/manager/bloc/worker/worker_state.dart';
 import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
 import 'package:gestion_chantier/manager/models/WorkerModel.dart';
 import 'package:gestion_chantier/manager/services/worker_service.dart';
+import 'package:gestion_chantier/manager/widgets/rstate/CreateWorkerBottomSheet.dart';
+import 'package:gestion_chantier/ouvrier/utils/profile_utils.dart';
+import 'package:gestion_chantier/shared/utils/ContactUtils.dart';
 
 class EquipeTab extends StatelessWidget {
   final RealEstateModel projet;
@@ -16,135 +19,164 @@ class EquipeTab extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create:
-          (context) =>
-              WorkerBloc(workerService: WorkerService())
-                ..add(LoadWorkers(propertyId: projet.id)),
+      create: (_) => WorkerBloc(
+        workerService: WorkerService(),
+      )..add(LoadWorkers(propertyId: projet.id)),
 
-      child: Container(
-        color: const Color(0xFFF8F9FA),
-        padding: const EdgeInsets.only(left: 16, right: 16),
-        child: BlocBuilder<WorkerBloc, WorkerState>(
-          builder: (context, state) {
-            if (state is WorkerLoading) {
-              return const Center(child: CircularProgressIndicator());
-            } else if (state is WorkerError) {
-              return Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      Icons.error_outline,
-                      size: 64,
-                      color: Colors.red.shade300,
-                    ),
-                    const SizedBox(height: 16),
-                    Text(
-                      'Erreur de chargement',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.w600,
-                        color: Colors.red.shade700,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      state.message,
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    ElevatedButton(
-                      onPressed: () {
-                        context.read<WorkerBloc>().add(
+      /// ⬇️ Builder OBLIGATOIRE pour avoir le bon context
+      child: Builder(
+        builder: (blocContext) {
+          return Scaffold(
+            backgroundColor: const Color(0xFFF8F9FA),
+
+            /// ================= FAB =================
+            floatingActionButton: FloatingActionButton(
+              backgroundColor: Theme.of(blocContext).primaryColor,
+              child: const Icon(Icons.person_add, color: Colors.white),
+              onPressed: () async {
+                final result = await showModalBottomSheet<bool>(
+                  context: blocContext,
+                  isScrollControlled: true,
+                  backgroundColor: Colors.transparent,
+                  builder: (_) => CreateWorkerBottomSheet(
+                    projetId: projet.id,
+                  ),
+                );
+
+                /// 🔄 Refresh après création
+                if (result == true) {
+                  blocContext.read<WorkerBloc>().add(
+                    RefreshWorkers(propertyId: projet.id),
+                  );
+                }
+              },
+            ),
+
+            /// ================= BODY =================
+            body: Padding(
+              padding: const EdgeInsets.all(16),
+              child: BlocBuilder<WorkerBloc, WorkerState>(
+                builder: (context, state) {
+                  if (state is WorkerLoading) {
+                    return const Center(
+                      child: CircularProgressIndicator(),
+                    );
+                  }
+
+                  if (state is WorkerError) {
+                    return _buildError(blocContext, state.message);
+                  }
+
+                  if (state is WorkerLoaded) {
+                    if (state.workers.isEmpty) {
+                      return _buildEmpty();
+                    }
+
+                    return RefreshIndicator(
+                      onRefresh: () async {
+                        blocContext.read<WorkerBloc>().add(
                           RefreshWorkers(propertyId: projet.id),
                         );
                       },
-                      child: const Text('Réessayer'),
-                    ),
-                  ],
-                ),
-              );
-            } else if (state is WorkerLoaded) {
-              if (state.workers.isEmpty) {
-                return const Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.people_outline, size: 64, color: Colors.grey),
-                      SizedBox(height: 16),
-                      Text(
-                        'Aucun membre d\'équipe',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w600,
-                          color: Colors.grey,
+                      child: GridView.builder(
+                        padding: const EdgeInsets.only(bottom: 80),
+                        gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 16,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1,
                         ),
+                        itemCount: state.workers.length,
+                        itemBuilder: (_, index) =>
+                            _buildMemberCard(state.workers[index]),
                       ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Aucun worker n\'est assigné à ce projet',
-                        style: TextStyle(fontSize: 14, color: Colors.grey),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                    );
+                  }
 
-              return RefreshIndicator(
-                onRefresh: () async {
-                  context.read<WorkerBloc>().add(
-                    RefreshWorkers(propertyId: projet.id),
-                  );
+                  return const SizedBox.shrink();
                 },
-                child: GridView.builder(
-                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                    crossAxisCount: 2,
-                    crossAxisSpacing: 16,
-                    mainAxisSpacing: 10,
-                    childAspectRatio: 1.0,
-                  ),
-                  itemCount: state.workers.length,
-                  itemBuilder: (context, index) {
-                    return _buildMemberCard(state.workers[index]);
-                  },
-                ),
-              );
-            }
-
-            return const SizedBox.shrink();
-          },
-        ),
+              ),
+            ),
+          );
+        },
       ),
     );
   }
 
+  // ================= UI STATES =================
+
+  Widget _buildError(BuildContext context, String message) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, size: 64, color: Colors.red.shade300),
+          const SizedBox(height: 12),
+          const Text(
+            'Erreur de chargement',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          Text(message, textAlign: TextAlign.center),
+          const SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: () {
+              context.read<WorkerBloc>().add(
+                RefreshWorkers(propertyId: projet.id),
+              );
+            },
+            child: const Text('Réessayer'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmpty() {
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.people_outline, size: 64, color: Colors.grey),
+          SizedBox(height: 12),
+          Text(
+            'Aucun membre d’équipe',
+            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+          ),
+          SizedBox(height: 6),
+          Text(
+            'Aucun worker assigné à ce projet',
+            style: TextStyle(color: Colors.grey),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ================= MEMBER CARD =================
+
   Widget _buildMemberCard(WorkerModel worker) {
-    // Définir les couleurs de fond selon le profil
     Color getBgColor(String profil) {
       switch (profil.toLowerCase()) {
         case 'chef de chantier':
-          return const Color(0xFF87CEEB); // Bleu clair
+          return const Color(0xFF87CEEB);
         case 'maître d\'œuvre':
-          return const Color(0xFFFFF8DC); // Jaune clair
+          return const Color(0xFFFFF8DC);
         case 'ouvrier':
-          return const Color(0xFFDDA0DD); // Violet clair
+          return const Color(0xFFDDA0DD);
         default:
-          return const Color(0xFFD3D3D3); // Gris clair
+          return const Color(0xFFD3D3D3);
       }
     }
 
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            spreadRadius: 0,
             blurRadius: 8,
             offset: const Offset(0, 2),
           ),
@@ -153,143 +185,91 @@ class EquipeTab extends StatelessWidget {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          // Photo de profil avec cercle coloré
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              shape: BoxShape.circle,
-              color: getBgColor(worker.profil),
-            ),
-            child: ClipOval(
-              child:
-                  worker.photo != null
-                      ? Image.network(
-                        worker.photo!,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return _buildAvatarFallback(
-                            worker,
-                            getBgColor(worker.profil),
-                          );
-                        },
-                      )
-                      : _buildAvatarFallback(worker, getBgColor(worker.profil)),
-            ),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              CircleAvatar(
+                radius: 25,
+                backgroundColor: getBgColor(worker.profil),
+                backgroundImage:
+                worker.photo != null ? NetworkImage(worker.photo!) : null,
+                child: worker.photo == null
+                    ? Text(
+                  _getInitials(worker),
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 18,
+                  ),
+                )
+                    : null,
+              ),
+              Positioned(
+                bottom: -2,
+                right: -2,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: worker.present ? Colors.green : Colors.red,
+                    border: Border.all(color: Colors.white, width: 2),
+                  ),
+                ),
+              ),
+            ],
           ),
-
           const SizedBox(height: 8),
-          // Nom complet
           Text(
             _getDisplayName(worker),
-            style: const TextStyle(
-              fontSize: 14,
-              fontWeight: FontWeight.w600,
-              color: Color(0xFF1A202C),
-            ),
             textAlign: TextAlign.center,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontWeight: FontWeight.w600),
           ),
-
-          const SizedBox(height: 2),
-          // Profil/Rôle
+          const SizedBox(height: 4),
           Text(
-            _getDisplayProfil(worker),
-            style: const TextStyle(
-              fontSize: 11,
-              color: Color(0xFF718096),
-              fontWeight: FontWeight.w400,
-            ),
-            textAlign: TextAlign.center,
-            maxLines: 2,
-            overflow: TextOverflow.ellipsis,
+            ProfileUtils.toFrench(worker.profil),
+            style: const TextStyle(fontSize: 11, color: Colors.grey),
           ),
-
-          const SizedBox(height: 6),
-          // Boutons de contact
+          const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              _buildContactButton(Icons.phone_outlined, () {
-                // Action pour appeler - utiliser worker.telephone
-                // Exemple: launch('tel:${worker.telephone}');
+              _contactButton(Icons.phone, () {
+                ContactUtils.callPhone(worker.telephone);
               }),
               const SizedBox(width: 16),
-              _buildContactButton(Icons.email, () {
-                // Action pour envoyer un email - utiliser worker.email
-                // Exemple: launch('mailto:${worker.email}');
+              _contactButton(Icons.message, () {
+                ContactUtils.openWhatsApp(worker.telephone);
               }),
             ],
-          ),
+          )
         ],
       ),
     );
   }
 
-  Widget _buildAvatarFallback(WorkerModel worker, Color bgColor) {
-    // Safe way to get initials - handle empty strings
-    String getInitials() {
-      String firstInitial = worker.prenom.isNotEmpty ? worker.prenom[0] : '';
-      String lastInitial = worker.nom.isNotEmpty ? worker.nom[0] : '';
-
-      // If both are empty, use a default
-      if (firstInitial.isEmpty && lastInitial.isEmpty) {
-        return 'U'; // Default to 'U' for User
-      }
-
-      return '$firstInitial$lastInitial'.toUpperCase();
-    }
-
-    return Container(
-      decoration: BoxDecoration(shape: BoxShape.circle, color: bgColor),
-      child: Center(
-        child: Text(
-          getInitials(),
-          style: const TextStyle(
-            color: Colors.white,
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildContactButton(IconData icon, VoidCallback onTap) {
-    return GestureDetector(
+  Widget _contactButton(IconData icon, VoidCallback onTap) {
+    return InkWell(
       onTap: onTap,
-      child: Container(
-        width: 32,
-        height: 32,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: const Color(0xFFEDF2F7),
-        ),
+      borderRadius: BorderRadius.circular(20),
+      child: CircleAvatar(
+        radius: 16,
+        backgroundColor: const Color(0xFFEDF2F7),
         child: Icon(icon, size: 16, color: const Color(0xFF4A5568)),
       ),
     );
   }
 
-  // Helper method to get display name
-  String _getDisplayName(WorkerModel worker) {
-    String prenom = worker.prenom.trim();
-    String nom = worker.nom.trim();
-
-    if (prenom.isEmpty && nom.isEmpty) {
-      return 'Utilisateur'; // Default name
-    } else if (prenom.isEmpty) {
-      return nom;
-    } else if (nom.isEmpty) {
-      return prenom;
-    } else {
-      return '$prenom $nom';
-    }
+  String _getInitials(WorkerModel worker) {
+    final p = worker.prenom.isNotEmpty ? worker.prenom[0] : '';
+    final n = worker.nom.isNotEmpty ? worker.nom[0] : '';
+    return (p + n).isEmpty ? 'U' : '$p$n'.toUpperCase();
   }
 
-  // Helper method to get display profil
-  String _getDisplayProfil(WorkerModel worker) {
-    String profil = worker.profil.trim();
-    return profil.isEmpty ? 'Non spécifié' : profil;
+  String _getDisplayName(WorkerModel worker) {
+    final name = '${worker.prenom} ${worker.nom}'.trim();
+    return name.isEmpty ? 'Utilisateur' : name;
   }
 }

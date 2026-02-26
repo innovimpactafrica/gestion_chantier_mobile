@@ -49,12 +49,34 @@ class WorkerService {
     return MonthlySummaryModel.fromJson(response.data);
   }
 
-  Future<PresenceHistoryModel> fetchPresenceHistory(int workerId) async {
-    final response = await _apiService.dio.get(
-      '/workers/$workerId/presence-history',
-    );
-    return PresenceHistoryModel.fromJson(response.data);
+  Future<PresenceHistoryModel> fetchPresenceHistory(int workerId, [String? date]) async {
+    String url;
+
+    try {
+      if (date != null && date.isNotEmpty) {
+        // Si une date est fournie, utiliser l'endpoint presence-history avec la date
+        url = '/workers/$workerId/presence-history?date=$date';
+      } else {
+        // Si aucune date n'est fournie, utiliser l'endpoint monthly-summary
+        url = '/workers/$workerId/presence-history';
+      }
+
+      print("Request URL: $url");
+
+      final response = await _apiService.dio.get(url);
+
+      // Assurez-vous que la réponse est valide avant de la traiter
+      if (response.statusCode == 200) {
+        return PresenceHistoryModel.fromJson(response.data);
+      } else {
+        throw Exception('Failed to load data: ${response.statusCode}');
+      }
+    } catch (e) {
+      print("Error: $e");
+      rethrow;
+    }
   }
+
 
   Future<String> checkInOut(
     int workerId, {

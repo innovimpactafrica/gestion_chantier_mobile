@@ -24,11 +24,11 @@ class VueGeneraleWidget extends StatefulWidget {
   const VueGeneraleWidget({super.key, required this.projet, this.onRefresh});
 
   @override
-  _VueGeneraleWidgetState createState() => _VueGeneraleWidgetState();
+  VueGeneraleWidgetState createState() => VueGeneraleWidgetState();
 }
 
-class _VueGeneraleWidgetState extends State<VueGeneraleWidget> {
-  String selectedYear = '2025';
+class VueGeneraleWidgetState extends State<VueGeneraleWidget> {
+ // String selectedYear = '2025';
   final ProgressAlbumService _albumService = ProgressAlbumService();
   List<ProgressAlbum> _albums = [];
   bool _isLoadingAlbums = false;
@@ -118,7 +118,7 @@ class _VueGeneraleWidgetState extends State<VueGeneraleWidget> {
                   color: Color(0xFF2C3E50),
                 ),
               ),
-              Container(
+             /* Container(
                 padding: EdgeInsets.symmetric(horizontal: 10, vertical: 1),
                 decoration: BoxDecoration(
                   border: Border.all(color: Color(0xFFE0E0E0)),
@@ -143,7 +143,7 @@ class _VueGeneraleWidgetState extends State<VueGeneraleWidget> {
                     onChanged: (String? newValue) {
                       if (newValue != null) {
                         setState(() {
-                          selectedYear = newValue;
+                          //selectedYear = newValue;
                         });
                       }
                     },
@@ -153,7 +153,7 @@ class _VueGeneraleWidgetState extends State<VueGeneraleWidget> {
                     ),
                   ),
                 ),
-              ),
+              ),*/
             ],
           ),
           SizedBox(height: 20),
@@ -1316,7 +1316,7 @@ class _AlbumDetailModalState extends State<_AlbumDetailModal> {
           SizedBox(height: 24),
           Row(
             children: [
-              Expanded(
+             /* Expanded(
                 child: ElevatedButton(
                   onPressed: () {},
                   style: ElevatedButton.styleFrom(
@@ -1332,7 +1332,7 @@ class _AlbumDetailModalState extends State<_AlbumDetailModal> {
                   ),
                 ),
               ),
-              SizedBox(width: 16),
+              SizedBox(width: 16),*/
               Expanded(
                 child: OutlinedButton(
                   onPressed: _isDeleting ? null : _deleteAlbum,

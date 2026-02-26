@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:gestion_chantier/manager/models/MaterialMovementModel.dart';
 import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
 import 'package:gestion_chantier/manager/models/MaterialModel.dart';
 import 'package:gestion_chantier/manager/services/Materiaux_service.dart';
@@ -20,7 +21,7 @@ class InventairesTab extends StatefulWidget {
 
 class _InventairesTabState extends State<InventairesTab> {
   List<Materiau> materiaux = [];
-  List<Mouvement> mouvementsRecents = [];
+  List<MaterialMovementModel> mouvementsRecents = [];
   final MaterialsApiService _materialsApiService = MaterialsApiService();
   final MovementsApiService _movementsApiService = MovementsApiService();
   bool _isLoading = true;
@@ -77,14 +78,13 @@ class _InventairesTabState extends State<InventairesTab> {
       // Debug de l'API des mouvements
       await _movementsApiService.debugMovementsApiResponse(widget.projet.id);
 
-      final List<MovementModel> movementsFromApi = await _movementsApiService
+       List<MaterialMovementModel> movementsFromApi = await _movementsApiService
           .getMovementsByProperty(widget.projet.id);
 
       setState(() {
         // Convertir les MovementModel en Mouvement et trier par date (plus récent en premier)
-        mouvementsRecents =
-            movementsFromApi.map((movement) => movement.toMouvement()).toList()
-              ..sort((a, b) => b.dateHeure.compareTo(a.dateHeure));
+        mouvementsRecents = movementsFromApi;
+
 
         // Limiter à 10 mouvements récents maximum
         if (mouvementsRecents.length > 10) {
@@ -522,7 +522,7 @@ class _InventairesTabState extends State<InventairesTab> {
     );
   }
 
-  Widget _buildMouvementCard(Mouvement mouvement) {
+  Widget _buildMouvementCard(MaterialMovementModel mouvement) {
     bool estSortie = mouvement.type == TypeMouvement.sortie;
 
     return Container(
@@ -567,7 +567,7 @@ class _InventairesTabState extends State<InventairesTab> {
               ),
               Flexible(
                 child: Text(
-                  mouvement.chantier,
+                  mouvement.type.name,
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w500,
@@ -580,7 +580,7 @@ class _InventairesTabState extends State<InventairesTab> {
           ),
           const SizedBox(height: 14),
           Text(
-            '${mouvement.quantite} ${mouvement.materiau}',
+            '${mouvement.material.label}',
             style: const TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -592,7 +592,7 @@ class _InventairesTabState extends State<InventairesTab> {
           ),
           const SizedBox(height: 5),
           Text(
-            _formatDateTime(mouvement.dateHeure),
+            "${mouvement.quantity.toInt().toString()} ${mouvement.material.unit.code}",
             style: TextStyle(
               fontSize: 14,
               color: HexColor('#625F68'),
@@ -641,27 +641,64 @@ class _InventairesTabState extends State<InventairesTab> {
   void _ouvrirDetailsMateriau(Materiau materiau) {
     showModalBottomSheet(
       context: context,
-      isScrollControlled: true,
       isDismissible: true,
-      enableDrag: true,
+      isScrollControlled: true, // nécessaire pour utiliser fractionallySizedBox
       backgroundColor: Colors.transparent,
-      builder:
-          (context) => Padding(
-            padding: EdgeInsets.only(
-              bottom: MediaQuery.of(context).viewInsets.bottom,
-            ),
-            child: DetailsMateriauScreen(
-              materiau: materiau,
-              projet: widget.projet,
-            ),
-          ),
-    ).then((result) {
-      if (result == true) {
-        _refreshData();
-      }
-    });
+      builder: (context) {
+        return DraggableScrollableSheet(
+          initialChildSize: 0.6, // Hauteur initiale (60% de l'écran)
+          minChildSize: 0.4,     // Hauteur minimale lors du drag
+          maxChildSize: 0.9,     // Hauteur maximale lors du drag
+          builder: (context, scrollController) {
+            return Container(
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+              ),
+              child: Column(
+                children: [
+                  // Petit indicateur pour montrer que c'est draggable
+                  Container(
+                    width: 40,
+                    height: 5,
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                  ),
+                  // Bouton fermer
+                  Align(
+                    alignment: Alignment.topRight,
+                    child: IconButton(
+                      icon: const Icon(Icons.close),
+                      onPressed: () => Navigator.pop(context),
+                    ),
+                  ),
+                  // Contenu scrollable
+                  Expanded(
+                    child: DetailsMateriauScreen(
+                      materiau: materiau,
+                      projet: widget.projet,
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
   }
+
+
+
+
+
 }
+
+
+
 
 // Classes de données
 class Materiau {

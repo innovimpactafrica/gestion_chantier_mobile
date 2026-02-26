@@ -14,7 +14,10 @@ class WorkerRepository {
     return workerService.checkInOut(workerId, qrCodeText: qrCodeText, latitude: latitude, longitude: longitude);
   }
 
-  Future<PresenceHistoryModel> getPresenceHistory(int workerId) {
-    return workerService.fetchPresenceHistory(workerId);
+  Future<PresenceHistoryModel> getPresenceHistory({
+    required int workerId,
+    String? date, // date est optionnelle
+  }) {
+    return workerService.fetchPresenceHistory(workerId, date);
   }
 }

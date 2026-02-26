@@ -6,6 +6,8 @@ import 'package:gestion_chantier/ouvrier/bloc/username/user_name_section_bloc.da
 import 'package:gestion_chantier/ouvrier/repository/auth_repository.dart';
 import 'package:gestion_chantier/ouvrier/bloc/username/user_name_section_event.dart';
 import 'package:gestion_chantier/ouvrier/bloc/username/user_name_section_state.dart';
+import '../../shared/utils/DateFormatUtils.dart';
+import '../utils/profile_utils.dart';
 import '../widgets/home/stats_grid.dart';
 import '../bloc/worker/worker_tasks_bloc.dart';
 import '../bloc/worker/worker_tasks_event.dart';
@@ -13,10 +15,12 @@ import '../bloc/worker/worker_tasks_state.dart';
 import '../repository/task_repository.dart';
 import '../services/task_service.dart';
 import '../models/TaskModel.dart';
+import '../widgets/task/TaskStatusDonut.dart';
 import 'taches_page.dart';
 
 class AccueilOuvrierPage extends StatelessWidget {
   final VoidCallback onVoirPlus;
+
   const AccueilOuvrierPage({Key? key, required this.onVoirPlus})
     : super(key: key);
 
@@ -61,6 +65,7 @@ class AccueilOuvrierPage extends StatelessWidget {
 
 class _HeaderSection extends StatelessWidget {
   const _HeaderSection();
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UserNameSectionBloc>(
@@ -71,7 +76,9 @@ class _HeaderSection extends StatelessWidget {
       child: BlocBuilder<UserNameSectionBloc, UserNameSectionState>(
         builder: (context, state) {
           final userProfile =
-              state is UserNameLoaded ? state.user.profil : 'Ouvrier';
+              state is UserNameLoaded
+                  ? ProfileUtils.toFrench(state.user.profil)
+                  : 'Ouvrier';
 
           return Container(
             height: 170, // hauteur fixe moderne
@@ -102,7 +109,7 @@ class _HeaderSection extends StatelessWidget {
                     ],
                   ),
                 ),
-                Stack(
+                /* Stack(
                   children: [
                     IconButton(
                       icon: const Icon(
@@ -125,7 +132,7 @@ class _HeaderSection extends StatelessWidget {
                       ),
                     ),
                   ],
-                ),
+                ),*/
               ],
             ),
           );
@@ -137,6 +144,7 @@ class _HeaderSection extends StatelessWidget {
 
 class _WelcomeCard extends StatelessWidget {
   const _WelcomeCard();
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UserNameSectionBloc>(
@@ -148,6 +156,7 @@ class _WelcomeCard extends StatelessWidget {
         builder: (context, state) {
           String nom = '';
           String prenom = '';
+          int id = 0;
           if (state is UserNameLoading) {
             return const SizedBox(
               height: 20,
@@ -157,6 +166,7 @@ class _WelcomeCard extends StatelessWidget {
           } else if (state is UserNameLoaded) {
             nom = state.user.nom;
             prenom = state.user.prenom;
+            id = state.user.id;
           } else if (state is UserNameError) {
             return Text(
               state.message,
@@ -177,7 +187,8 @@ class _WelcomeCard extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(
+                TaskStatusDonut(executorId: id),
+                /*  Text(
                   'Bonjour, $prenom $nom',
                   style: const TextStyle(
                     color: Color(0xFF183B63),
@@ -193,7 +204,7 @@ class _WelcomeCard extends StatelessWidget {
                     fontSize: 14,
                     fontWeight: FontWeight.w400,
                   ),
-                ),
+                ),*/
               ],
             ),
           );
@@ -205,7 +216,9 @@ class _WelcomeCard extends StatelessWidget {
 
 class _TodayTasksSection extends StatelessWidget {
   final VoidCallback onVoirPlus;
+
   const _TodayTasksSection({required this.onVoirPlus});
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider<UserNameSectionBloc>(
@@ -236,30 +249,31 @@ class _TodayTasksSection extends StatelessWidget {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              Text(
-                                "Tâches aujourd'hui",
-                                style: TextStyle(
-                                  color: HexColor('#2C3E50'),
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 20,
-                                ),
-                              ),
-                              GestureDetector(
-                                onTap: onVoirPlus,
-                                child: Text(
-                                  'Voir plus',
+                          if (tasks.isNotEmpty)
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                Text(
+                                  "À faire ",
                                   style: TextStyle(
-                                    color: Color(0xFFFF5C02),
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: 12,
+                                    color: Colors.grey.shade400,
+                                    fontWeight: FontWeight.normal,
+                                    fontSize: 20,
                                   ),
                                 ),
-                              ),
-                            ],
-                          ),
+                                GestureDetector(
+                                  onTap: onVoirPlus,
+                                  child: Text(
+                                    'Voir plus',
+                                    style: TextStyle(
+                                      color: Color(0xFFFF5C02),
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
                           const SizedBox(height: 18),
                           ...tasks
                               .take(2)
@@ -267,20 +281,40 @@ class _TodayTasksSection extends StatelessWidget {
                                 (task) => Column(
                                   children: [
                                     GestureDetector(
-                                      onTap: () {
-                                        showModalBottomSheet(
-                                          context: context,
-                                          isScrollControlled: true,
-                                          shape: const RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.vertical(
-                                              top: Radius.circular(24),
-                                            ),
-                                          ),
-                                          builder:
-                                              (_) => TaskDetailBottomSheet(
-                                                task: task,
-                                              ),
-                                        );
+                                      onTap: () async {
+                                        final result =
+                                            await showModalBottomSheet<bool>(
+                                              context: context,
+                                              isScrollControlled: true,
+                                              shape:
+                                                  const RoundedRectangleBorder(
+                                                    borderRadius:
+                                                        BorderRadius.vertical(
+                                                          top: Radius.circular(
+                                                            24,
+                                                          ),
+                                                        ),
+                                                  ),
+                                              builder:
+                                                  (_) => TaskDetailBottomSheet(
+                                                    task: task,
+                                                  ),
+                                            );
+
+                                        // result == true si la tâche a été changée
+                                        if (result == true) {
+                                          final workerId =
+                                              task.executors.isNotEmpty
+                                                  ? task.executors[0].id
+                                                  : null;
+                                          if (workerId != null) {
+                                            BlocProvider.of<WorkerTasksBloc>(
+                                              context,
+                                            ).add(
+                                              LoadWorkerTasksEvent(workerId),
+                                            );
+                                          }
+                                        }
                                       },
                                       child: _TaskCard(
                                         title: task.title,
@@ -295,6 +329,35 @@ class _TodayTasksSection extends StatelessWidget {
                                         actionIcon: _actionIcon(task.status),
                                         actionType: _actionType(task.status),
                                         onAction: () async {
+                                          final result =
+                                              await showModalBottomSheet<bool>(
+                                                context: context,
+                                                isScrollControlled: true,
+                                                shape:
+                                                    const RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.vertical(
+                                                            top:
+                                                                Radius.circular(
+                                                                  24,
+                                                                ),
+                                                          ),
+                                                    ),
+                                                builder:
+                                                    (_) =>
+                                                        TaskDetailBottomSheet(
+                                                          task: task,
+                                                        ),
+                                              );
+
+                                          // result == true si la tâche a été changée
+                                          if (result == true) {
+                                            print(
+                                              "Tâche modifiée_____acheuil !",
+                                            );
+                                          }
+
+                                          /*
                                           final isTodo = task.status == 'TODO';
                                           final action =
                                               isTodo ? 'commencer' : 'terminer';
@@ -324,6 +387,7 @@ class _TodayTasksSection extends StatelessWidget {
                                                       ),
                                             );
                                           }
+                                          */
                                         },
                                       ),
                                     ),
@@ -436,16 +500,7 @@ _TaskActionType _actionType(String status) {
 enum _TaskActionType { done, start }
 
 String _formatTaskDate(TaskModel task) {
-  if (task.startDate != null && task.endDate != null) {
-    final start = task.startDate!;
-    final end = task.endDate!;
-    String startStr =
-        "${start.day.toString().padLeft(2, '0')}/${start.month.toString().padLeft(2, '0')}/${start.year}";
-    String endStr =
-        "${end.day.toString().padLeft(2, '0')}/${end.month.toString().padLeft(2, '0')}/${end.year}";
-    return "$startStr - $endStr";
-  }
-  return '';
+  return DateFormatUtils.formatPeriod(task.startDate, task.endDate);
 }
 
 class _TaskCard extends StatelessWidget {
@@ -516,7 +571,7 @@ class _TaskCard extends StatelessWidget {
           const SizedBox(height: 8),
           Row(
             children: [
-              Icon(Icons.access_time, size: 18, color: HexColor('#6C757D')),
+              Icon(Icons.date_range, size: 18, color: HexColor('#6C757D')),
               const SizedBox(width: 6),
               Text(
                 time,

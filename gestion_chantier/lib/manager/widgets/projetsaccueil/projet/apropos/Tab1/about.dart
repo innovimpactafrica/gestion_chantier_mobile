@@ -89,7 +89,7 @@ class AProposTab extends StatelessWidget {
           SizedBox(height: 20),
 
           _buildProgressSection(
-            progression: projet.averageProgress.round(),
+            progression: projet.averageProgress!.round(),
             isMain: true,
           ),
 
@@ -106,7 +106,7 @@ class AProposTab extends StatelessWidget {
           ),
           SizedBox(height: 12),
           Text(
-            projet.description,
+            projet.description!,
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey[600],
@@ -148,7 +148,7 @@ class AProposTab extends StatelessWidget {
         'label': 'Date d\'échéance',
         'value':
             projet.endDate != null
-                ? DateFormat('dd/MM/yyyy').format(projet.endDate)
+                ? DateFormat('dd/MM/yyyy').format(projet.endDate!)
                 : 'Non définie',
       },
     ];

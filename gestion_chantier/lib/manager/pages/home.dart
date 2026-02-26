@@ -9,6 +9,7 @@ import 'package:gestion_chantier/manager/bloc/materiels/material_event.dart';
 import 'package:gestion_chantier/manager/bloc/materiels/material_state.dart'
     as material_states;
 import 'package:gestion_chantier/manager/bloc/task/task_bloc.dart';
+import 'package:gestion_chantier/manager/models/UserModel.dart';
 import 'package:gestion_chantier/manager/models/accueil.dart';
 import 'package:gestion_chantier/manager/repository/auth_repository.dart';
 import 'package:gestion_chantier/manager/services/MaterialsService.dart';
@@ -22,6 +23,10 @@ import 'package:gestion_chantier/manager/widgets/home/overview.dart';
 import 'package:gestion_chantier/manager/widgets/home/stock_alerts.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_state.dart';
+import 'package:gestion_chantier/ouvrier/utils/profile_utils.dart';
+
+import '../models/RealEstateKpiStatusModel.dart';
+import '../repository/RealEstateKpiRepository.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -51,11 +56,55 @@ class HomePageContent extends StatefulWidget {
 }
 
 class _HomePageContentState extends State<HomePageContent> {
+
+  final RealEstateKpiRepository repo = RealEstateKpiRepository();
+  final  AuthRepository authrepo =  AuthRepository();
+
+  RealEstateKpiStatusModel? kpiStatus;
+  bool isLoading = false;
+  String? errorMessage;
+  int? _lastLoadedUserId;
+  void loadKpi() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+
+      UserModel user = await authrepo.currentUser();
+      final kpi = await repo.getStatusKpiByPromoter(user .id);
+
+
+
+      setState(() {
+        kpiStatus = kpi;
+        isLoading = false;
+      });
+
+      print('Total: ${kpi.total}');
+      print('En cours: ${kpi.inProgress}');
+      print('En retard: ${kpi.delayed}');
+      print('En attente: ${kpi.pending}');
+      print('Terminés: ${kpi.completed}');
+    } catch (e) {
+      setState(() {
+        isLoading = false;
+        errorMessage = e.toString();
+      });
+
+      print('Erreur KPI: $e');
+    }
+  }
+
+
   @override
   void initState() {
     super.initState();
+
     // Add a small delay to ensure BLoCs are properly initialized
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      loadKpi();
       _loadInitialData();
     });
   }
@@ -95,18 +144,33 @@ class _HomePageContentState extends State<HomePageContent> {
               children: [
                 SizedBox(
                   height: 120,
-                  child: BlocBuilder<HomeBloc, HomeState>(
-                    builder: (context, state) {
-                      final userProfile =
-                          state.currentUser?.profil ?? 'Utilisateur';
-                      return HeaderWidget(
-                        name: const UserNameSection(),
-                        company: userProfile,
-                        avatarUrl: homeData.avatarUrl,
-                      );
+                  child: BlocListener<HomeBloc, HomeState>(
+                    listenWhen: (previous, current) =>
+                    previous.currentUser?.id != current.currentUser?.id &&
+                        current.currentUser != null,
+                    listener: (context, state) {
+                      final userId = state.currentUser?.id;
+
+                      if (userId != null && userId != _lastLoadedUserId) {
+                        _lastLoadedUserId = userId;
+
+                      }
                     },
+                    child: BlocBuilder<HomeBloc, HomeState>(
+                      builder: (context, state) {
+                        final userProfile =
+                        ProfileUtils.toFrench(state.currentUser?.profil);
+
+                        return HeaderWidget(
+                          name: const UserNameSection(),
+                          company: userProfile,
+                          avatarUrl: homeData.avatarUrl,
+                        );
+                      },
+                    ),
                   ),
                 ),
+
 
                 // Main content with white background
                 Expanded(
@@ -154,12 +218,13 @@ class _HomePageContentState extends State<HomePageContent> {
             ),
 
             // Overview card positioned on top
+
             Positioned(
               top: 80,
               left: 20,
               right: 20,
               child: OverviewCardWidget(
-                siteStats: homeData.siteStats,
+                kpiStatus: kpiStatus,
                 budgetPercentage: homeData.budgetPercentage,
               ),
             ),

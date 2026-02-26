@@ -11,44 +11,53 @@ import 'package:gestion_chantier/manager/bloc/documents/documents_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/documents/documents_event.dart';
 import 'package:gestion_chantier/manager/bloc/documents/documents_state.dart';
 import 'dart:io';
-
 class AddDocumentModal extends StatefulWidget {
   final VoidCallback? onDocumentAdded;
   final RealEstateModel? projet;
   final List<UnitParametre> availableTypes;
+  final DocumentsBloc? bloc; // Nouveau paramètre pour recevoir le bloc existant
 
   const AddDocumentModal({
     super.key,
     this.onDocumentAdded,
     this.projet,
     required this.availableTypes,
+    this.bloc, // Le bloc optionnel
   });
 
   @override
   State<AddDocumentModal> createState() => _AddDocumentModalState();
 
-  // Méthode statique pour afficher le modal
   static void show(
-    BuildContext context, {
-    VoidCallback? onDocumentAdded,
-    required List<UnitParametre> availableTypes,
-    RealEstateModel? projet,
-  }) {
+      BuildContext context, {
+        VoidCallback? onDocumentAdded,
+        required List<UnitParametre> availableTypes,
+        RealEstateModel? projet,
+        DocumentsBloc? bloc, // Nouveau paramètre
+      }) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder:
-          (context) => BlocProvider(
-            create:
-                (context) =>
-                    DocumentsBloc(documentRepository: DocumentRepository()),
-            child: AddDocumentModal(
-              onDocumentAdded: onDocumentAdded,
-              availableTypes: availableTypes,
-              projet: projet,
-            ),
-          ),
+      backgroundColor: Colors.white,
+      builder: (context) {
+        // Si un bloc est fourni, on l'utilise, sinon on en crée un nouveau
+        Widget modal = AddDocumentModal(
+          onDocumentAdded: onDocumentAdded,
+          availableTypes: availableTypes,
+          projet: projet,
+          bloc: bloc,
+        );
+
+        // Si aucun bloc n'est fourni, on enveloppe dans un BlocProvider
+        if (bloc == null) {
+          return BlocProvider(
+            create: (context) => DocumentsBloc(documentRepository: DocumentRepository()),
+            child: modal,
+          );
+        } else {
+          return modal;
+        }
+      },
     );
   }
 }
@@ -70,23 +79,25 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
   void _selectDocumentType() {
     showModalBottomSheet(
       context: context,
-      shape: RoundedRectangleBorder(
+      shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder:
-          (context) => Container(
-            padding: EdgeInsets.all(20),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'Type de document',
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
-                SizedBox(height: 16),
-                ...widget.availableTypes.map(
-                  (type) => ListTile(
+      backgroundColor: Colors.white,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              'Type de document',
+              style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+            ),
+            SizedBox(
+              height: 300,
+              child: ListView(
+                children: widget.availableTypes.map(
+                      (type) => ListTile(
                     title: Text(type.label),
                     subtitle: Text(type.code),
                     onTap: () {
@@ -96,10 +107,12 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                       Navigator.pop(context);
                     },
                   ),
-                ),
-              ],
+                ).toList(),
+              ),
             ),
-          ),
+          ],
+        ),
+      ),
     );
   }
 
@@ -120,42 +133,42 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
     } catch (e) {
       print('❌ Erreur lors de la sélection du fichier: $e');
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erreur lors de la sélection du fichier')),
+        const SnackBar(content: Text('Erreur lors de la sélection du fichier')),
       );
     }
   }
 
   void _saveDocument() {
     if (_titleController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Veuillez saisir un titre')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Veuillez saisir un titre')));
       return;
     }
 
     if (_selectedDocumentType == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Veuillez sélectionner un type de document')),
+        const SnackBar(content: Text('Veuillez sélectionner un type de document')),
       );
       return;
     }
 
     if (_selectedFile == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Veuillez sélectionner un fichier')),
+        const SnackBar(content: Text('Veuillez sélectionner un fichier')),
       );
       return;
     }
 
     if (widget.projet == null) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text('Erreur: Projet non défini')));
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Erreur: Projet non défini')));
       return;
     }
 
-    // Ajouter le document via le bloc
-    context.read<DocumentsBloc>().add(
+    // Utiliser le bloc fourni ou le bloc du contexte
+    final documentsBloc = widget.bloc ?? context.read<DocumentsBloc>();
+
+    documentsBloc.add(
       AddDocument(
         title: _titleController.text.trim(),
         file: _selectedFile!,
@@ -164,57 +177,55 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
         typeId: _selectedDocumentType!.id,
         startDate: DateFormatter.formatToApiDate(DateTime.now()),
         endDate: DateFormatter.formatToApiDate(
-          DateTime.now().add(Duration(days: 30)),
+          DateTime.now().add(const Duration(days: 30)),
         ),
       ),
     );
-
-    // Le modal ne se ferme plus automatiquement
-    // La fermeture sera gérée par le BlocListener après succès
   }
 
   @override
   Widget build(BuildContext context) {
+    // Utiliser le bloc fourni ou celui du contexte
+    final documentsBloc = widget.bloc ?? context.read<DocumentsBloc>();
+
     return BlocListener<DocumentsBloc, DocumentsState>(
+      bloc: documentsBloc, // Spécifier le bloc à écouter
+      listenWhen: (previous, current) =>
+      current is DocumentAdded || current is DocumentAddError,
       listener: (context, state) {
+        if (!mounted) return;
+
         if (state is DocumentAdded) {
-          // Fermer le modal
           Navigator.pop(context);
 
-          // Afficher un message de succès
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(
-                'Document ajouté avec succès: ${state.document.title}',
-              ),
+            const SnackBar(
+              content: Text('Document ajouté avec succès'),
               backgroundColor: Colors.green,
             ),
           );
 
-          // Callback pour notifier que le document a été ajouté
-          if (widget.onDocumentAdded != null) {
-            widget.onDocumentAdded!();
-          }
-        } else if (state is DocumentAddError) {
+          widget.onDocumentAdded?.call();
+        }
+
+        if (state is DocumentAddError) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Erreur lors de l\'ajout: ${state.message}'),
+              content: Text(state.message),
               backgroundColor: Colors.red,
             ),
           );
         }
       },
-      child: Container(
-        height: MediaQuery.of(context).size.height * 0.70,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
+      child:  Padding(
+          padding: EdgeInsets.only(
+            bottom: MediaQuery.of(context).viewInsets.bottom,
+          ),
+          child: Column(
           children: [
             // Handle bar
             Container(
-              margin: EdgeInsets.only(top: 12),
+              margin: const EdgeInsets.only(top: 12),
               width: 40,
               height: 4,
               decoration: BoxDecoration(
@@ -225,11 +236,11 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
 
             // Header with close button
             Padding(
-              padding: EdgeInsets.all(20),
+              padding: const EdgeInsets.all(20),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
+                  const Text(
                     'Nouveau document',
                     style: TextStyle(
                       fontSize: 24,
@@ -251,25 +262,26 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
 
             Expanded(
               child: BlocBuilder<DocumentsBloc, DocumentsState>(
+                bloc: documentsBloc, // Spécifier le bloc à utiliser
                 builder: (context, state) {
                   return SingleChildScrollView(
                     child: Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           // Titre field
-                          Text(
+                          const Text(
                             'Titre',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: HexColor('#333333'),
+                              color: Color(0xFF333333),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Container(
-                            padding: EdgeInsets.symmetric(
+                            padding: const EdgeInsets.symmetric(
                               horizontal: 16,
                               vertical: 10,
                             ),
@@ -289,29 +301,29 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                                 isDense: true,
                                 contentPadding: EdgeInsets.zero,
                               ),
-                              style: TextStyle(fontSize: 16),
+                              style: const TextStyle(fontSize: 16),
                             ),
                           ),
 
-                          SizedBox(height: 14),
+                          const SizedBox(height: 14),
 
                           // Type de document field
-                          Text(
+                          const Text(
                             'Type de document',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w500,
-                              color: HexColor('#333333'),
+                              color: Color(0xFF333333),
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           GestureDetector(
                             onTap:
-                                state is! DocumentAdding
-                                    ? _selectDocumentType
-                                    : null,
+                            state is! DocumentAdding
+                                ? _selectDocumentType
+                                : null,
                             child: Container(
-                              padding: EdgeInsets.symmetric(
+                              padding: const EdgeInsets.symmetric(
                                 horizontal: 16,
                                 vertical: 10,
                               ),
@@ -320,18 +332,15 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                                 borderRadius: BorderRadius.circular(8),
                               ),
                               child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
+                                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                                 children: [
                                   Text(
-                                    _selectedDocumentType?.label ??
-                                        'Sélectionner',
+                                    _selectedDocumentType?.label ?? 'Sélectionner',
                                     style: TextStyle(
                                       fontSize: 16,
-                                      color:
-                                          _selectedDocumentType != null
-                                              ? HexColor('#333333')
-                                              : HexColor('#6B7280'),
+                                      color: _selectedDocumentType != null
+                                          ? const Color(0xFF333333)
+                                          : HexColor('#6B7280'),
                                     ),
                                   ),
                                   Icon(
@@ -343,10 +352,10 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                             ),
                           ),
 
-                          SizedBox(height: 14),
+                          const SizedBox(height: 14),
 
                           // Document field
-                          Text(
+                          const Text(
                             'Document',
                             style: TextStyle(
                               fontSize: 16,
@@ -354,30 +363,27 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                               color: Colors.black,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           GestureDetector(
                             onTap:
-                                state is! DocumentAdding ? _selectFile : null,
+                            state is! DocumentAdding ? _selectFile : null,
                             child: CustomPaint(
                               painter: DottedBorderPainter(
                                 radius: 8,
                                 color: HexColor('#FF5C02').withOpacity(0.5),
-                                dashPattern: [6, 4],
+                                dashPattern: const [6, 4],
                               ),
                               child: Padding(
-                                padding: EdgeInsets.all(10),
+                                padding: const EdgeInsets.all(10),
                                 child: Row(
                                   children: [
-                                    // Bouton "Choisir un fichier"
                                     Container(
-                                      padding: EdgeInsets.symmetric(
+                                      padding: const EdgeInsets.symmetric(
                                         horizontal: 16,
                                         vertical: 10,
                                       ),
                                       decoration: BoxDecoration(
-                                        color: HexColor(
-                                          '#FF5C02',
-                                        ).withOpacity(0.1),
+                                        color: HexColor('#FF5C02').withOpacity(0.1),
                                         borderRadius: BorderRadius.circular(8),
                                       ),
                                       child: Row(
@@ -388,7 +394,7 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                                             color: HexColor('#FF5C02'),
                                             size: 20,
                                           ),
-                                          SizedBox(width: 8),
+                                          const SizedBox(width: 8),
                                           Text(
                                             'Choisir un fichier',
                                             style: TextStyle(
@@ -401,23 +407,19 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                                       ),
                                     ),
 
-                                    SizedBox(width: 16),
+                                    const SizedBox(width: 16),
 
-                                    // Texte du fichier sélectionné
                                     Expanded(
                                       child: Text(
-                                        _selectedFileName ??
-                                            'Aucun fichier choisi',
+                                        _selectedFileName ?? 'Aucun fichier choisi',
                                         style: TextStyle(
-                                          color:
-                                              _selectedFileName != null
-                                                  ? Colors.black87
-                                                  : Colors.grey[600],
+                                          color: _selectedFileName != null
+                                              ? Colors.black87
+                                              : Colors.grey[600],
                                           fontSize: 14,
-                                          fontWeight:
-                                              _selectedFileName != null
-                                                  ? FontWeight.w500
-                                                  : FontWeight.normal,
+                                          fontWeight: _selectedFileName != null
+                                              ? FontWeight.w500
+                                              : FontWeight.normal,
                                         ),
                                       ),
                                     ),
@@ -427,10 +429,10 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                             ),
                           ),
 
-                          SizedBox(height: 12),
+                          const SizedBox(height: 12),
 
                           // Description field
-                          Text(
+                          const Text(
                             'Description (optionnel)',
                             style: TextStyle(
                               fontSize: 16,
@@ -438,7 +440,7 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                               color: Colors.black,
                             ),
                           ),
-                          SizedBox(height: 8),
+                          const SizedBox(height: 8),
                           Container(
                             height: 60,
                             padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -462,60 +464,56 @@ class _AddDocumentModalState extends State<AddDocumentModal> {
                             ),
                           ),
 
-                          SizedBox(height: 20),
+                          const SizedBox(height: 20),
 
                           // Enregistrer button
                           Container(
                             width: double.infinity,
-                            margin: EdgeInsets.only(bottom: 10),
+                            margin: const EdgeInsets.only(bottom: 10),
                             child: ElevatedButton(
                               onPressed:
-                                  state is! DocumentAdding
-                                      ? _saveDocument
-                                      : null,
+                              state is! DocumentAdding
+                                  ? _saveDocument
+                                  : null,
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: HexColor('#1A365D'),
-                                padding: EdgeInsets.symmetric(vertical: 16),
+                                padding: const EdgeInsets.symmetric(vertical: 16),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(8),
                                 ),
                               ),
                               child:
-                                  state is DocumentAdding
-                                      ? Row(
-                                        mainAxisAlignment:
-                                            MainAxisAlignment.center,
-                                        children: [
-                                          SizedBox(
-                                            width: 20,
-                                            height: 20,
-                                            child: CircularProgressIndicator(
-                                              strokeWidth: 2,
-                                              valueColor:
-                                                  AlwaysStoppedAnimation<Color>(
-                                                    Colors.white,
-                                                  ),
-                                            ),
-                                          ),
-                                          SizedBox(width: 12),
-                                          Text(
-                                            'Ajout en cours...',
-                                            style: TextStyle(
-                                              fontSize: 16,
-                                              fontWeight: FontWeight.w500,
-                                              color: Colors.white,
-                                            ),
-                                          ),
-                                        ],
-                                      )
-                                      : Text(
-                                        'Enregistrer',
-                                        style: TextStyle(
-                                          fontSize: 16,
-                                          fontWeight: FontWeight.w500,
-                                          color: Colors.white,
-                                        ),
-                                      ),
+                              state is DocumentAdding
+                                  ? Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  const Text(
+                                    'Ajout en cours...',
+                                    style: TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ],
+                              )
+                                  : const Text(
+                                'Enregistrer',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w500,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
                           ),
                         ],

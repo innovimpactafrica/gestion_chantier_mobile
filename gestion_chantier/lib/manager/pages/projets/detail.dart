@@ -9,6 +9,9 @@ import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/apropos/T
 import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/apropos/Tab1/budget.dart';
 import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/apropos/Tab1/equipe.dart';
 
+import '../../widgets/home/QrCodeModal .dart';
+import '../addresses/adress_list.dart';
+
 class ProjectDetailWidget extends StatefulWidget {
   final RealEstateModel projet;
   final VoidCallback? onBackPressed;
@@ -31,7 +34,17 @@ class _ProjectDetailWidgetState extends State<ProjectDetailWidget> {
     {'icon': 'assets/icons/chart.svg', 'label': 'Avancement'},
     {'icon': 'assets/icons/money.svg', 'label': 'Budget'},
     {'icon': 'assets/icons/friend.svg', 'label': 'Équipe'},
+    {'icon': 'assets/icons/address.svg', 'label': 'Adresses'},
   ];
+  void showQrCodeModal(BuildContext context, String text) {
+    showModalBottomSheet(
+      context: context,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (_) => QrCodeModal(text: text),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -41,6 +54,11 @@ class _ProjectDetailWidgetState extends State<ProjectDetailWidget> {
           title: widget.projet.name,
           onBackPressed:
               widget.onBackPressed ?? () => Navigator.of(context).pop(),
+          actions: [
+            IconButton(onPressed: (){
+              showQrCodeModal(context,widget.projet.qrcode);
+            }, icon: Icon(Icons.qr_code,size: 30,color: Colors.white,))
+          ],
         ),
         _buildTabBar(),
         Expanded(child: _buildTabContent()),
@@ -51,11 +69,15 @@ class _ProjectDetailWidgetState extends State<ProjectDetailWidget> {
   Widget _buildTabBar() {
     return Container(
       color: HexColor('#1A365D'),
+      width: MediaQuery.of(context).size.width,
       padding: const EdgeInsets.symmetric(horizontal: 15),
-      child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceAround,
-        children: List.generate(tabs.length, (index) => _buildTabItem(index)),
-      ),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: List.generate(tabs.length, (index) => _buildTabItem(index)),
+        ),
+      )
     );
   }
 
@@ -110,6 +132,8 @@ class _ProjectDetailWidgetState extends State<ProjectDetailWidget> {
         return BudgetTab(projet: widget.projet);
       case 3:
         return EquipeTab(projet: widget.projet);
+      case 4:
+        return AddressListPage (projectId:widget.projet.id ,);
       default:
         return AProposTab(projet: widget.projet);
     }

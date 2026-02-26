@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:firebase_analytics/firebase_analytics.dart';
+import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/Indicator/ConstructionIndicatorBloc.dart';
@@ -15,13 +19,98 @@ import 'package:gestion_chantier/manager/services/ConstructionPhaseIndicator_ser
 import 'package:gestion_chantier/manager/services/ProjetService.dart';
 import 'package:gestion_chantier/manager/services/TaskService.dart';
 import 'package:gestion_chantier/manager/services/api_service.dart';
+import 'package:gestion_chantier/services/PushNotificationService.dart';
+
+import 'package:intl/date_symbol_data_local.dart';
+import 'bet/utils/HexColor.dart';
+import 'bet/utils/constant.dart';
+import 'firebase_options.dart';
+
 // import 'package:gestion_chantier/manager/widgets/navitems.dart';
 // import 'package:gestion_chantier/ouvrier/pages/ouvrier_main_screen.dart';
 
 // import 'package:gestion_chantier/manager/widgets/navitems.dart';
 
-void main() {
-  runApp(MyApp());
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+late FirebaseAnalytics analytics;
+
+Future<void> main() async {
+  await runZonedGuarded(
+    () async {
+      WidgetsFlutterBinding.ensureInitialized();
+      await initializeDateFormatting('fr_FR');
+
+      // Initialisation Firebase
+      await _initializeFirebase();
+
+      analytics = FirebaseAnalytics.instance;
+
+      // Initialisation des services
+      await _initializeServices();
+
+      // Lancement de l'application
+      runApp(
+
+
+          MyApp());
+    },
+    (error, stack) {
+      debugPrint('Erreur non capturée: $error');
+      debugPrint('Stack trace: $stack');
+    },
+  );
+}
+
+Future<void> _initializeServices() async {
+  try {
+    await PushNotificationService().initialize();
+  } catch (e) {
+    debugPrint('Error initializing services: $e');
+  }
+}
+
+// 🔥 FONCTION D'INITIALISATION FIREBASE CORRIGÉE
+Future<void> _initializeFirebase() async {
+  try {
+    print('🔄 Début initialisation Firebase...');
+
+    // IMPORTANT : Attendre que Firebase soit prêt
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
+    print('✅ Firebase.initializeApp() terminé avec succès');
+
+    // Vérification supplémentaire
+    final app = Firebase.app();
+    print('📱 Application Firebase: ${app.name}');
+    print('📱 Project ID: ${app.options.projectId}');
+    print('📱 API Key: ${app.options.apiKey}');
+
+    // Test immédiat avec Analytics
+    try {
+      await FirebaseAnalytics.instance.logEvent(
+        name: 'firebase_initialized',
+        parameters: {'platform': 'ios', 'time': DateTime.now().toString()},
+      );
+      print('✅ Test Analytics réussi');
+    } catch (e) {
+      print('⚠️ Analytics test échoué: $e');
+    }
+  } catch (e, stack) {
+    print('❌ ERREUR CRITIQUE Firebase.initializeApp: $e');
+    print('Stack trace: $stack');
+
+    // Essayez avec des options par défaut comme fallback
+    try {
+      print('🔄 Tentative avec options par défaut...');
+      await Firebase.initializeApp();
+      print('✅ Firebase initialisé avec options par défaut');
+    } catch (e2) {
+      print('❌ Échec total Firebase: $e2');
+      rethrow;
+    }
+  }
 }
 
 class MyApp extends StatelessWidget {
@@ -67,9 +156,39 @@ class MyApp extends StatelessWidget {
           ),
         ],
         child: MaterialApp(
+          title: 'BTP CONNECT',
+          theme: _buildAppTheme(),
           debugShowCheckedModeBanner: false,
           home: SplashScreen(),
         ),
+      ),
+    );
+  }
+
+  ThemeData _buildAppTheme() {
+    return ThemeData(
+      primaryColor: HexColor(APIConstants.primaryColorValue),
+      colorScheme: ColorScheme.fromSeed(
+        seedColor: HexColor(APIConstants.secondaryColorValue),
+        brightness: Brightness.light,
+      ),
+      fontFamily: 'Poppins',
+      textTheme: const TextTheme(
+        displayLarge: TextStyle(fontFamily: 'Poppins'),
+        displayMedium: TextStyle(fontFamily: 'Poppins'),
+        displaySmall: TextStyle(fontFamily: 'Poppins'),
+        headlineLarge: TextStyle(fontFamily: 'Poppins'),
+        headlineMedium: TextStyle(fontFamily: 'Poppins'),
+        headlineSmall: TextStyle(fontFamily: 'Poppins'),
+        titleLarge: TextStyle(fontFamily: 'Poppins'),
+        titleMedium: TextStyle(fontFamily: 'Poppins'),
+        titleSmall: TextStyle(fontFamily: 'Poppins'),
+        bodyLarge: TextStyle(fontFamily: 'Poppins'),
+        bodyMedium: TextStyle(fontFamily: 'Poppins'),
+        bodySmall: TextStyle(fontFamily: 'Poppins'),
+        labelLarge: TextStyle(fontFamily: 'Poppins'),
+        labelMedium: TextStyle(fontFamily: 'Poppins'),
+        labelSmall: TextStyle(fontFamily: 'Poppins'),
       ),
     );
   }

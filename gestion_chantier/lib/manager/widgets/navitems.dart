@@ -48,10 +48,11 @@ class _MainScreenState extends State<MainScreen> {
     return BlocBuilder<HomeBloc, HomeState>(
       builder: (context, state) {
         final currentUserId = state.currentUser?.id ?? 0;
+        final currentUserProfil = state.currentUser?.profil ?? "";
 
         final List<Widget> pages = [
           HomePage(),
-          ProjetsPage(currentUserId: currentUserId),
+          ProjetsPage(currentUserId: currentUserId,profil: currentUserProfil ,),
           ComptePage(),
         ];
 

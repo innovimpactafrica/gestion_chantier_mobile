@@ -21,7 +21,7 @@ class AddSignalementModal extends StatefulWidget {
     return showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      backgroundColor: Colors.transparent,
+      backgroundColor: Colors.white,
       builder: (context) => AddSignalementModal(propertyId: propertyId),
     );
   }
@@ -122,15 +122,14 @@ class _AddSignalementModalState extends State<AddSignalementModal> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      height: MediaQuery.of(context).size.height * 0.65,
-      decoration: const BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+    return Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.of(context).viewInsets.bottom,
       ),
-      child: Stack(
+      child:  Stack(
         children: [
           Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               // Handle bar
               Container(

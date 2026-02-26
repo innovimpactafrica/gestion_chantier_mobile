@@ -1,4 +1,5 @@
 import 'package:dio/dio.dart';
+import 'package:gestion_chantier/manager/models/MaterialMovementModel.dart';
 import 'package:gestion_chantier/manager/services/api_service.dart';
 import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/stock/Tab2/inventaires/inventaires.dart';
 
@@ -6,7 +7,7 @@ class MovementsApiService {
   final ApiService _apiService = ApiService();
 
   /// Récupère tous les mouvements pour une propriété donnée
-  Future<List<MovementModel>> getMovementsByProperty(int propertyId) async {
+  Future<List<MaterialMovementModel>> getMovementsByProperty(int propertyId) async {
     try {
       print('Récupération des mouvements pour la propriété: $propertyId');
 
@@ -17,16 +18,27 @@ class MovementsApiService {
 
       print('Movements response status: ${response.statusCode}');
       print('Movements response data type: ${response.data.runtimeType}');
+      print('Movements response data: ${response.data}');
 
       if (response.statusCode == 200) {
-        return _parseMovementsFromResponse(response.data);
+        // Assure-toi que la data est une liste
+        final data = response.data["content"];
+        if (data is List) {
+          return data
+              .map((json) => MaterialMovementModel.fromJson(json))
+              .toList();
+        } else {
+          throw Exception('Format inattendu de la réponse: attendu une liste');
+        }
       } else {
         throw Exception(
           'Erreur lors du chargement des mouvements: ${response.statusCode}',
         );
       }
     } on DioException catch (e) {
-      return _handleDioException(e, 'chargement des mouvements');
+      // Ici tu peux gérer tes erreurs Dio spécifiques
+      print('DioException lors du chargement des mouvements: $e');
+      rethrow;
     } catch (e, stackTrace) {
       print('Exception générale lors du chargement des mouvements: $e');
       print('StackTrace: $stackTrace');

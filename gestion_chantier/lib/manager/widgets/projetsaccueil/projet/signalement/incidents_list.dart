@@ -5,6 +5,7 @@ import 'package:gestion_chantier/manager/models/IncidentModel.dart';
 import 'package:gestion_chantier/manager/services/IncidentService.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
+import 'package:gestion_chantier/shared/utils/openFileUtil.dart';
 
 class IncidentsListWidget extends StatefulWidget {
   final int propertyId;
@@ -360,14 +361,19 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                       separatorBuilder:
                           (context, i) => const SizedBox(width: 16),
                       itemBuilder: (context, i) {
-                        return ClipRRect(
-                          borderRadius: BorderRadius.circular(12),
-                          child: Image.network(
-                            '${APIConstants.API_BASE_URL_IMG}${incident.pictures[i]}',
-                            width: 90,
-                            height: 90,
-                            fit: BoxFit.cover,
-                          ),
+                        return InkWell(
+                          onTap: (){
+                            openFileFromUrl( '${APIConstants.API_BASE_URL_IMG}${incident.pictures[i]}',incident.pictures[i]);
+                          },
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(12),
+                            child: Image.network(
+                              '${APIConstants.API_BASE_URL_IMG}${incident.pictures[i]}',
+                              width: 90,
+                              height: 90,
+                              fit: BoxFit.cover,
+                            ),
+                          )
                         );
                       },
                     ),
@@ -376,7 +382,7 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                 // Boutons Modifier/Supprimer
                 Row(
                   children: [
-                    Expanded(
+                   /* Expanded(
                       child: ElevatedButton(
                         onPressed: () {},
                         style: ElevatedButton.styleFrom(
@@ -392,7 +398,7 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                         ),
                       ),
                     ),
-                    const SizedBox(width: 16),
+                    const SizedBox(width: 16),*/
                     Expanded(
                       child: TextButton(
                         onPressed: () async {

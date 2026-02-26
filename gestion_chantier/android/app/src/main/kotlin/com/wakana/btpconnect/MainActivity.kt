@@ -1,4 +1,4 @@
-package com.wakana.gestion_chantier
+package com.wakana.btpconnect
 
 import io.flutter.embedding.android.FlutterActivity
 

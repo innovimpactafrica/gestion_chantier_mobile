@@ -5,14 +5,22 @@ import 'package:gestion_chantier/manager/bloc/projet/projet_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/projet/projet_event.dart';
 import 'package:gestion_chantier/manager/bloc/projet/projet_state.dart';
 import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
+import 'package:gestion_chantier/manager/repository/RealEstateKpiRepository.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'package:gestion_chantier/manager/widgets/navitems_projet.dart';
 import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet_card.dart';
+import 'package:gestion_chantier/manager/widgets/rstate/CreateRealEstateModal.dart';
+import 'package:gestion_chantier/ouvrier/utils/ToastUtils.dart';
+
+import '../../shared/utils/constant.dart';
+import '../utils/url_launcher.dart';
 
 class ProjetsPage extends StatefulWidget {
   final int currentUserId;
+  final String profil;
 
-  const ProjetsPage({super.key, required this.currentUserId});
+  const ProjetsPage(
+      {super.key, required this.currentUserId, required this.profil});
 
   @override
   _ProjetsPageState createState() => _ProjetsPageState();
@@ -30,6 +38,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
     searchController.addListener(_onSearchChanged);
   }
 
+
   @override
   void dispose() {
     searchController.removeListener(_onSearchChanged);
@@ -42,12 +51,18 @@ class _ProjetsPageState extends State<ProjetsPage> {
   }
 
   void _onProjetTap(RealEstateModel projet) {
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => MainProjectScreenWrapper(projet: projet),
-      ),
-    );
+    if (projet.blocked) {
+      ToastUtils.show(
+          'Le créateur du projet doit renouveler son abonnement pour débloquer les fonctionnalités.'
+      );
+    } else {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => MainProjectScreenWrapper(projet: projet),
+        ),
+      );
+    }
   }
 
   void _showSearchDialog() {
@@ -79,6 +94,70 @@ class _ProjetsPageState extends State<ProjetsPage> {
     return BlocProvider(
       create: (context) => _projetsBloc,
       child: Scaffold(
+        floatingActionButton: FloatingActionButton(
+          backgroundColor:  Theme.of(context).primaryColor,
+          child: Icon(Icons.add_outlined, color: Colors.white,),
+          onPressed: () async {
+            // 1️⃣ Vérifier si l'utilisateur peut créer un projet
+            final canCreate = await RealEstateKpiRepository()
+                .checkCanCreateProject(widget.currentUserId);
+
+            if (!canCreate) {
+              // 2️⃣ Si non, afficher un pop-up pour proposer l'abonnement
+              showDialog(
+                context: context,
+                builder: (ctx) =>
+                    AlertDialog(
+                      title: const Text("Abonnement requis"),
+                      content: const Text(
+                          "Vous devez vous abonner pour pouvoir créer un chantier."),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          child: const Text("Annuler"),
+                        ),
+                        ElevatedButton(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Theme.of(context).primaryColor,
+                          ),
+                          onPressed: () {
+                            Navigator.pop(ctx); // fermer le dialog
+                            UrlLauncher().openWebLink(
+                                '${BTPConst.BASE_LINK}/sub/${widget
+                                    .currentUserId}/${widget.profil}');
+                          },
+                          child: const Text(
+                            "S'abonner",
+                            style: TextStyle(color: Colors.white),
+                          ),
+                        ),
+                      ],
+                    ),
+              );
+              return; // ne pas ouvrir le BottomSheet
+            }
+
+            // 3️⃣ Si oui, ouvrir le BottomSheet pour créer le projet
+            final result = await showModalBottomSheet<bool>(
+              context: context,
+              isScrollControlled: true,
+              builder: (_) =>
+                  CreateRealEstateBottomSheet(
+                    promoterId: widget.currentUserId,
+                    profil: widget.profil,
+                  ),
+            );
+
+            if (result == true) {
+              _projetsBloc.add(RefreshProjetsEvent());
+              await _projetsBloc.stream.firstWhere(
+                    (state) => state is! ProjetsLoadingState,
+              );
+            }
+          },
+        ),
+
+
         backgroundColor: HexColor('#F5F7FA'),
         appBar: _buildAppBar(),
         body: BlocConsumer<ProjetsBloc, ProjetsState>(
@@ -103,19 +182,21 @@ class _ProjetsPageState extends State<ProjetsPage> {
             return Center(child: Text('Aucun projet disponible'));
           },
         ),
-      ),
-    );
+      ),);
   }
 
   PreferredSizeWidget _buildAppBar() {
     return AppBar(
       automaticallyImplyLeading: false,
+      centerTitle: false,
       title: Container(
-        margin: EdgeInsets.only(right: 210),
+        alignment: Alignment.centerLeft,
+        // margin: EdgeInsets.only(right: 210),
         child: Text(
           'Projets',
+          textAlign: TextAlign.start,
           style: TextStyle(
-            fontSize: 32,
+            fontSize: 24,
             fontWeight: FontWeight.w600,
             color: Colors.white,
           ),
@@ -140,7 +221,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
       onRefresh: () async {
         _projetsBloc.add(RefreshProjetsEvent());
         await _projetsBloc.stream.firstWhere(
-          (state) => state is! ProjetsLoadingState,
+              (state) => state is! ProjetsLoadingState,
         );
       },
       child: ListView(
@@ -155,14 +236,15 @@ class _ProjetsPageState extends State<ProjetsPage> {
           ...projets
               .skip(1)
               .map(
-                (projet) => Padding(
+                (projet) =>
+                Padding(
                   padding: EdgeInsets.only(bottom: 16),
                   child: SecondaryProjetCard(
                     projet: projet,
                     onTap: () => _onProjetTap(projet),
                   ),
                 ),
-              ),
+          ),
         ],
       ),
     );

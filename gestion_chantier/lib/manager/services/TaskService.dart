@@ -1,7 +1,8 @@
 // services/task_service.dart
 import 'package:dio/dio.dart';
 import 'package:gestion_chantier/manager/models/TaskModel.dart';
-import 'package:gestion_chantier/manager/services/AuthService.dart';
+
+import '../../ouvrier/services/AuthService.dart';
 import 'api_service.dart';
 
 class TaskService {

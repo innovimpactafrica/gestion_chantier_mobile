@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'worker_check_event.dart';
 import 'worker_check_state.dart';
@@ -31,8 +32,21 @@ class WorkerCheckBloc extends Bloc<WorkerCheckEvent, WorkerCheckState> {
       }
       emit(WorkerCheckSuccess(time: time, isEntry: isEntry));
       isEntry = !isEntry;
-    } catch (e) {
-      emit(WorkerCheckError('Erreur lors du pointage: ${e.toString()}'));
+    } on DioError catch (e) {
+      String errorMsg = 'Erreur lors du pointage';
+      if (e.response != null && e.response?.data != null) {
+        if (e.response?.data is Map<String, dynamic>) {
+          errorMsg = e.response?.data['message'] ?? errorMsg;
+        } else if (e.response?.data is String) {
+          errorMsg = e.response?.data;
+        }
+      } else if (e.type == DioErrorType.connectionTimeout) {
+        errorMsg = 'Timeout de la requête';
+      } else if (e.type == DioErrorType.unknown) {
+        errorMsg = 'Problème de connexion réseau';
+      }
+
+      emit(WorkerCheckError(errorMsg ));
     }
   }
 }

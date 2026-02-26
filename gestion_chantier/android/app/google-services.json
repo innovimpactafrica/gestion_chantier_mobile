@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "676125641197",
+    "project_id": "solimus-53df6",
+    "storage_bucket": "solimus-53df6.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:676125641197:android:687ecf5373477e7cf57fe4",
+        "android_client_info": {
+          "package_name": "com.wakana.btpconnect"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsOjo6AIWk8as5w29TeWCdzH7mYErnDZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:676125641197:android:b5ff0b856395a9d6f57fe4",
+        "android_client_info": {
+          "package_name": "com.wakana.solimus_vefa"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAsOjo6AIWk8as5w29TeWCdzH7mYErnDZU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

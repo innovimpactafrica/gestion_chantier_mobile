@@ -5,17 +5,18 @@ import 'package:gestion_chantier/manager/bloc/Task/task_state.dart';
 import 'package:gestion_chantier/manager/bloc/budget/budget_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/budget/budget_state.dart';
 import 'package:gestion_chantier/manager/bloc/task/task_bloc.dart';
+import 'package:gestion_chantier/manager/models/RealEstateKpiStatusModel.dart';
 import 'package:gestion_chantier/manager/models/accueil.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'package:gestion_chantier/manager/widgets/home/circular_progress.dart';
 
 class OverviewCardWidget extends StatelessWidget {
-  final SiteStats siteStats;
+  RealEstateKpiStatusModel? kpiStatus;
   final double budgetPercentage;
 
-  const OverviewCardWidget({
+   OverviewCardWidget({
     super.key,
-    required this.siteStats,
+     this.kpiStatus,
     required this.budgetPercentage,
   });
 
@@ -90,25 +91,25 @@ class OverviewCardWidget extends StatelessWidget {
         children: [
           _buildStatRow(
             'En cours',
-            taskModel.pendingTasks,
+            kpiStatus!=null? kpiStatus!.inProgress:0,
             HexColor('#CBD5E1'),
           ),
           const SizedBox(height: 10),
           _buildStatRow(
             'En retard',
-            taskModel.overdueTasks,
+            kpiStatus!=null? kpiStatus!.delayed:0,
             HexColor('#E74C3C'),
           ),
           const SizedBox(height: 10),
           _buildStatRow(
             'En attente',
-            taskModel.pendingTasks,
+            kpiStatus!=null?  kpiStatus!.pending:0,
             HexColor('#F39C12'),
           ),
           const SizedBox(height: 10),
           _buildStatRow(
             'Terminées',
-            taskModel.completedTasks,
+            kpiStatus!=null? kpiStatus!.completed:0,
             HexColor('#2ECC71'),
           ),
         ],
@@ -139,13 +140,13 @@ class OverviewCardWidget extends StatelessWidget {
     // État initial - afficher les données mockées
     return Column(
       children: [
-        _buildStatRow('En cours', siteStats.inProgress, HexColor('#CBD5E1')),
+        _buildStatRow('En cours',kpiStatus!=null? kpiStatus!.inProgress:0, HexColor('#CBD5E1')),
         const SizedBox(height: 10),
-        _buildStatRow('En retard', siteStats.delayed, HexColor('#E74C3C')),
+        _buildStatRow('En retard', kpiStatus!=null? kpiStatus!.delayed:0, HexColor('#E74C3C')),
         const SizedBox(height: 10),
-        _buildStatRow('En attente', siteStats.pending, HexColor('#F39C12')),
+        _buildStatRow('En attente',kpiStatus!=null?  kpiStatus!.pending:0, HexColor('#F39C12')),
         const SizedBox(height: 10),
-        _buildStatRow('Terminées', siteStats.completed, HexColor('#2ECC71')),
+        _buildStatRow('Terminées', kpiStatus!=null? kpiStatus!.completed:0, HexColor('#2ECC71')),
       ],
     );
   }
@@ -153,13 +154,13 @@ class OverviewCardWidget extends StatelessWidget {
   Widget _buildFallbackStatistics() {
     return Column(
       children: [
-        _buildStatRow('En cours', siteStats.inProgress, HexColor('#CBD5E1')),
+        _buildStatRow('En cours',kpiStatus!=null? kpiStatus!.inProgress:0, HexColor('#CBD5E1')),
         const SizedBox(height: 10),
-        _buildStatRow('En retard', siteStats.delayed, HexColor('#E74C3C')),
+        _buildStatRow('En retard', kpiStatus!=null? kpiStatus!.delayed:0, HexColor('#E74C3C')),
         const SizedBox(height: 10),
-        _buildStatRow('En attente', siteStats.pending, HexColor('#F39C12')),
+        _buildStatRow('En attente',kpiStatus!=null?  kpiStatus!.pending:0, HexColor('#F39C12')),
         const SizedBox(height: 10),
-        _buildStatRow('Terminées', siteStats.completed, HexColor('#2ECC71')),
+        _buildStatRow('Terminées', kpiStatus!=null? kpiStatus!.completed:0, HexColor('#2ECC71')),
       ],
     );
   }
@@ -232,7 +233,7 @@ class OverviewCardWidget extends StatelessWidget {
             label,
             style: TextStyle(
               fontSize: 14,
-              color: HexColor('#7F8C8D'),
+              color: HexColor('#34495E'),
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -242,7 +243,7 @@ class OverviewCardWidget extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: HexColor('#34495E'),
+            color: HexColor('#7F8C8D') ,
           ),
         ),
       ],

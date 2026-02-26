@@ -1,5 +1,6 @@
 // ignore_for_file: unused_element
 
+import 'package:dio/dio.dart';
 import 'package:gestion_chantier/manager/models/UserModel.dart';
 import 'package:gestion_chantier/manager/models/documents.dart';
 import 'package:gestion_chantier/manager/services/AuthService.dart';
@@ -58,6 +59,41 @@ class AuthRepository {
       print('Signup error: $e'); // Debug log
       throw Exception("Erreur d'inscription : ${e.toString()}");
     }
+  }
+
+  // Fonction pour changer le mot de passe
+  Future<UserModel> changePassword({
+    required String email,
+    required String password,
+    required String newPassword,
+  }) async {
+    try {
+      final response = await _authService.changePassword(
+        email: email,
+        password: password,
+        newPassword: newPassword,
+      );
+      return UserModel.fromJson(response);
+    } catch (e) {
+      print('Signup error: $e'); // Debug log
+      throw Exception("Erreur de changement de mot de passe ");
+    }
+  }
+
+  // Nouvelle fonction pour reset password
+  Future<UserModel> resetPassword({required String email}) async {
+    try {
+      final response = await _authService.resetPassword(email: email);
+      return UserModel.fromJson(response);
+    } catch (e) {
+      throw Exception("Erreur d'inscription : ${e.toString()}");
+    }
+  }
+
+  void _handleError(DioException e, String message) {
+    // Ici tu peux gérer les erreurs comme tu veux
+    print("$message : ${e.message}");
+    throw Exception("$message : ${e.message}");
   }
 
   Future<UserModel> _handleLoginResponse(Map<String, dynamic> response) async {

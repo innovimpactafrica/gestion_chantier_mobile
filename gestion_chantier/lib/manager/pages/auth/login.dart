@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart';
+import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart' show RegisterScreen;
 import 'package:gestion_chantier/shared/utils/HexColor.dart';
 import 'package:gestion_chantier/shared/services/routing_service.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
@@ -13,7 +13,6 @@ import 'package:gestion_chantier/shared/utils/constant.dart';
 import '../../../bet/utils/constant.dart';
 import '../../../ouvrier/utils/ToastUtils.dart';
 import '../../../services/PushNotificationService.dart';
-import '../../utils/url_launcher.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -520,25 +519,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 state is AuthLoadingState
                                     ? null
                                     : () {
-                                      UrlLauncher().openWebLink(
-                                        APIConstants.INSCRPTION_LINLK,
-                                      );
-
-                                      /* Navigator.push(
+                                      Navigator.push(
                                         context,
                                         MaterialPageRoute(
-                                          builder:
-                                              (context) => UnifiedSignupScreen(
-                                                authBlocFactory:
-                                                    (context) => BlocProvider(
-                                                      create:
-                                                          (context) =>
-                                                              AuthBloc(),
-                                                      child: const SizedBox(),
-                                                    ),
-                                              ),
+                                          builder: (_) => const RegisterScreen(),
                                         ),
-                                      );*/
+                                      );
                                     },
                             child: Text(
                               'S\'inscrire',

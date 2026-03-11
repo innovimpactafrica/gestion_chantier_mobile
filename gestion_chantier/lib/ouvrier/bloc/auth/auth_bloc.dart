@@ -2,6 +2,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
 import 'package:gestion_chantier/ouvrier/repository/auth_repository.dart';
 import 'package:gestion_chantier/ouvrier/services/SharedPreferencesService.dart';
+import 'package:gestion_chantier/shared/services/UserCacheService.dart';
 
 import 'auth_state.dart';
 import 'auth_event.dart';
@@ -63,7 +64,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _sharedPreferencesService.removeValue(APIConstants.AUTH_TOKEN);
       // Supprimer le refresh token
       await _sharedPreferencesService.removeValue(APIConstants.REFRESH_TOKEN);
-      
+      UserCacheService.instance.invalidate();
+
       emit(AuthUnauthenticatedState());
     } catch (e) {
       emit(AuthErrorState(message: 'Erreur de déconnexion : ${e.toString()}'));

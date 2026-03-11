@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'package:dio/dio.dart';
+import 'package:gestion_chantier/shared/services/UserCacheService.dart';
 import 'api_service.dart';
 
 class AuthService {
@@ -29,22 +30,26 @@ class AuthService {
     required String email,
     required String password,
     required String phone,
+    String profil = 'SITE_MANAGER',
+    String adresse = '',
+    String dateNaissance = '',
+    String lieuNaissance = '',
   }) async {
     try {
-      Response response = await _dio.post(
-        "/v1/auth/signup", // Ajout du "/" au début
-        data: {
-          "firstName": firstName,
-          "lastName": lastName,
-          "email": email,
-          "password": password,
-          "role": "USER",
-          "activated": true,
-          "profil": "USER",
-          "phone": phone,
-        },
-      );
+      final map = <String, dynamic>{
+        "nom": lastName,
+        "prenom": firstName,
+        "email": email,
+        "password": password,
+        "telephone": phone,
+        "profil": profil,
+      };
+      if (adresse.isNotEmpty) map["adress"] = adresse;
+      if (dateNaissance.isNotEmpty) map["date"] = dateNaissance;
+      if (lieuNaissance.isNotEmpty) map["lieunaissance"] = lieuNaissance;
 
+      final formData = FormData.fromMap(map);
+      Response response = await _dio.post("/v1/auth/signup", data: formData);
       return response.data;
     } on DioException catch (e) {
       _handleError(e, "Échec de la création de compte");
@@ -54,11 +59,10 @@ class AuthService {
   // Méthode existante pour récupérer l'utilisateur connecté
   Future<dynamic> connectedUser() async {
     try {
-      Response response = await _dio.get(
-        "/v1/user/me",
-      ); // Ajout du "/" au début
-
-      return response.data;
+      return await UserCacheService.instance.get(() async {
+        final response = await _dio.get("/v1/user/me");
+        return response.data;
+      });
     } on DioException catch (e) {
       _handleError(e, "Impossible de récupérer les informations utilisateur");
     }

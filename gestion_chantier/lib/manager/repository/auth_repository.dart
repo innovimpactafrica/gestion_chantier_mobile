@@ -39,24 +39,31 @@ class AuthRepository {
     }
   }
 
-  Future<UserModel> signup({
+  Future<void> signup({
     required String firstName,
     required String lastName,
     required String email,
     required String password,
     required String phone,
+    String profil = 'WORKER',
+    String adresse = '',
+    String dateNaissance = '',
+    String lieuNaissance = '',
   }) async {
     try {
-      final response = await _authService.signUp(
+      await _authService.signUp(
         firstName: firstName,
         lastName: lastName,
         email: email,
         password: password,
         phone: phone,
+        profil: profil,
+        adresse: adresse,
+        dateNaissance: dateNaissance,
+        lieuNaissance: lieuNaissance,
       );
-      return _handleResponse(response);
     } catch (e) {
-      print('Signup error: $e'); // Debug log
+      print('Signup error: $e');
       throw Exception("Erreur d'inscription : ${e.toString()}");
     }
   }

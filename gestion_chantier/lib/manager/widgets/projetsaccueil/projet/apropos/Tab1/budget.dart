@@ -417,15 +417,19 @@ class _BudgetTabState extends State<BudgetTab> {
                       size: 20,
                     ),
                     const SizedBox(width: 8),
-                    Text(
-                      _isProjectOwner
-                          ? 'Modifier le budget'
-                          : 'Seul le propriétaire peut modifier',
-                      style: TextStyle(
-                        color:
-                            _isProjectOwner ? HexColor('#FF5C02') : Colors.grey,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600,
+                    Flexible(
+                      child: Text(
+                        _isProjectOwner
+                            ? 'Modifier le budget'
+                            : 'Seul le propriétaire peut modifier',
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _isProjectOwner
+                              ? HexColor('#FF5C02')
+                              : Colors.grey,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                   ],

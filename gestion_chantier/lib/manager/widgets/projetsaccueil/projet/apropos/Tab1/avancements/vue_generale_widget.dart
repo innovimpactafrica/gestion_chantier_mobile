@@ -275,12 +275,15 @@ class VueGeneraleWidgetState extends State<VueGeneraleWidget> {
                     size: 20,
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    'Mettre à jour les indicateurs',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w500,
-                      color: Color(0xFFFF5C02),
+                  Flexible(
+                    child: Text(
+                      'Mettre à jour les indicateurs',
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFFFF5C02),
+                      ),
                     ),
                   ),
                 ],

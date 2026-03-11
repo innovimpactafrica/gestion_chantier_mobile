@@ -8,6 +8,7 @@ import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
 import 'package:gestion_chantier/manager/models/WorkerModel.dart';
 import 'package:gestion_chantier/manager/services/worker_service.dart';
 import 'package:gestion_chantier/manager/widgets/rstate/CreateWorkerBottomSheet.dart';
+import 'package:gestion_chantier/manager/pages/workers/worker_detail_page.dart';
 import 'package:gestion_chantier/ouvrier/utils/profile_utils.dart';
 import 'package:gestion_chantier/shared/utils/ContactUtils.dart';
 
@@ -88,8 +89,16 @@ class EquipeTab extends StatelessWidget {
                           childAspectRatio: 1,
                         ),
                         itemCount: state.workers.length,
-                        itemBuilder: (_, index) =>
-                            _buildMemberCard(state.workers[index]),
+                        itemBuilder: (_, index) => GestureDetector(
+                          onTap: () => Navigator.of(context).push(
+                            MaterialPageRoute(
+                              builder: (_) => WorkerDetailPage(
+                                worker: state.workers[index],
+                              ),
+                            ),
+                          ),
+                          child: _buildMemberCard(state.workers[index]),
+                        ),
                       ),
                     );
                   }

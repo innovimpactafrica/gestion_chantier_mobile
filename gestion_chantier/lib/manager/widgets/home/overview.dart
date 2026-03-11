@@ -55,7 +55,7 @@ class OverviewCardWidget extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(width: 62),
+              const SizedBox(width: 16),
 
               // Budget Progress avec données réelles
               BlocBuilder<BudgetBloc, BudgetState>(
@@ -168,8 +168,8 @@ class OverviewCardWidget extends StatelessWidget {
   Widget _buildBudgetProgress(BudgetState state) {
     if (state is BudgetLoading) {
       return SizedBox(
-        width: 100,
-        height: 100,
+        width: 120,
+        height: 120,
         child: Center(
           child: CircularProgressIndicator(
             valueColor: AlwaysStoppedAnimation<Color>(HexColor('#FFF7F2')),
@@ -191,8 +191,8 @@ class OverviewCardWidget extends StatelessWidget {
 
     if (state is BudgetError) {
       return SizedBox(
-        width: 100,
-        height: 100,
+        width: 120,
+        height: 120,
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [

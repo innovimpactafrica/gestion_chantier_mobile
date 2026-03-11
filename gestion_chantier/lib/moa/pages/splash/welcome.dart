@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:gestion_chantier/moa/pages/auth/login.dart';
-import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart';
+import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart' show RegisterScreen;
 import 'package:gestion_chantier/moa/utils/HexColor.dart';
 
 class WelcomeScreen extends StatelessWidget {
@@ -102,9 +102,7 @@ class WelcomeScreen extends StatelessWidget {
                         Navigator.push(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => UnifiedSignupScreen(
-                              authBlocFactory: (context) => const SizedBox(),
-                            ),
+                            builder: (_) => const RegisterScreen(),
                           ),
                         );
                       },

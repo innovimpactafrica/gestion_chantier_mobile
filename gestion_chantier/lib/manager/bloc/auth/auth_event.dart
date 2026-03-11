@@ -26,6 +26,9 @@ class AuthSignupEvent extends AuthEvent {
   final bool activated;
   final String role;
   final String profil;
+  final String adresse;
+  final String dateNaissance;
+  final String lieuNaissance;
 
   const AuthSignupEvent({
     required this.firstName,
@@ -35,7 +38,10 @@ class AuthSignupEvent extends AuthEvent {
     required this.phone,
     this.activated = true,
     this.role = "USER",
-    this.profil = "USER",
+    this.profil = "SITE_MANAGER",
+    this.adresse = '',
+    this.dateNaissance = '',
+    this.lieuNaissance = '',
   });
 
   @override
@@ -48,6 +54,9 @@ class AuthSignupEvent extends AuthEvent {
     activated,
     role,
     profil,
+    adresse,
+    dateNaissance,
+    lieuNaissance,
   ];
 }
 

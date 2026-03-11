@@ -1,6 +1,7 @@
 // ignore_for_file: file_names
 
 import 'package:dio/dio.dart';
+import 'package:gestion_chantier/shared/services/UserCacheService.dart';
 import 'api_service.dart';
 
 class AuthService {
@@ -54,9 +55,10 @@ class AuthService {
   // Méthode existante pour récupérer l'utilisateur connecté
   Future<dynamic> connectedUser() async {
     try {
-      Response response = await _dio.get("/v1/user/me");
-
-      return response.data;
+      return await UserCacheService.instance.get(() async {
+        final response = await _dio.get("/v1/user/me");
+        return response.data;
+      });
     } on DioException catch (e) {
       _handleError(e, "Impossible de récupérer les informations utilisateur");
     }

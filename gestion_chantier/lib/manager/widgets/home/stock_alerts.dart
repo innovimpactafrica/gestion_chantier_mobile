@@ -70,7 +70,7 @@ class StockAlertsWidget extends StatelessWidget {
 
         // Stock Items - Scroll horizontal
         SizedBox(
-          height: 106,
+          height: 124,
           child:
               stockItems.isEmpty
                   ? _buildEmptyState()
@@ -95,7 +95,7 @@ class StockAlertsWidget extends StatelessWidget {
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      height: 106,
+      height: 124,
       decoration: BoxDecoration(
         color: Colors.grey[50],
         borderRadius: BorderRadius.circular(12),

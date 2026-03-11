@@ -172,12 +172,16 @@ class AProposTab extends StatelessWidget {
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                  Text(
-                    item['value']!,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w600,
-                      color: HexColor('#333333'),
+                  Flexible(
+                    child: Text(
+                      item['value']!,
+                      textAlign: TextAlign.end,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
+                        color: HexColor('#333333'),
+                      ),
                     ),
                   ),
                 ],

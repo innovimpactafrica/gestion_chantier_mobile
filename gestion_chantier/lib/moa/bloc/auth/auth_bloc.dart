@@ -4,6 +4,7 @@ import 'package:gestion_chantier/moa/services/SharedPreferencesService.dart';
 import 'package:gestion_chantier/moa/utils/constant.dart';
 import 'package:gestion_chantier/moa/bloc/auth/auth_event.dart';
 import 'package:gestion_chantier/moa/bloc/auth/auth_state.dart';
+import 'package:gestion_chantier/shared/services/UserCacheService.dart';
 
 class AuthBloc extends Bloc<AuthEvent, AuthState> {
   final AuthRepository _authRepository = AuthRepository();
@@ -62,7 +63,8 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _sharedPreferencesService.removeValue(APIConstants.AUTH_TOKEN);
       // Supprimer le refresh token
       await _sharedPreferencesService.removeValue(APIConstants.REFRESH_TOKEN);
-      
+      UserCacheService.instance.invalidate();
+
       emit(AuthUnauthenticatedState());
     } catch (e) {
       emit(AuthErrorState(message: 'Erreur de déconnexion : ${e.toString()}'));

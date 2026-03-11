@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_chantier/manager/repository/auth_repository.dart';
 import 'package:gestion_chantier/manager/services/SharedPreferencesService.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
+import 'package:gestion_chantier/shared/services/UserCacheService.dart';
 
 import 'auth_state.dart';
 import 'auth_event.dart';
@@ -41,14 +42,18 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     emit(AuthLoadingState());
 
     try {
-      final user = await _authRepository.signup(
+      await _authRepository.signup(
         firstName: event.firstName,
         lastName: event.lastName,
         email: event.email,
         password: event.password,
         phone: event.phone,
+        profil: event.profil,
+        adresse: event.adresse,
+        dateNaissance: event.dateNaissance,
+        lieuNaissance: event.lieuNaissance,
       );
-      emit(AuthAuthenticatedState(user: user, message: 'Inscription réussie'));
+      emit(AuthSuccesState(message: 'Inscription réussie ! Vous pouvez maintenant vous connecter.'));
     } catch (e) {
       emit(AuthErrorState(message: 'Erreur d\'inscription : ${e.toString()}'));
     }
@@ -67,6 +72,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       await _sharedPreferencesService.removeValue(APIConstants.REFRESH_TOKEN);
 
       await _sharedPreferencesService.removeValue("profil");
+      UserCacheService.instance.invalidate();
 
       emit(AuthUnauthenticatedState());
     } catch (e) {

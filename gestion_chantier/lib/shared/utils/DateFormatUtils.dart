@@ -24,4 +24,22 @@ class DateFormatUtils {
     return '$start au $end';
   }
 
+  /// 4️⃣ Formate une tâche → Aujourd'hui • 08:00 - 12:00
+  static String formatTaskPeriodWithTime(DateTime? startDate, DateTime? endDate) {
+    if (startDate == null || endDate == null) return '';
+
+    final now = DateTime.now();
+    final isToday = startDate.year == now.year &&
+        startDate.month == now.month &&
+        startDate.day == now.day;
+
+    final dateLabel = isToday
+        ? "Aujourd'hui"
+        : DateFormat('dd MMM', 'fr_FR').format(startDate);
+    final startTime = DateFormat('HH:mm').format(startDate);
+    final endTime = DateFormat('HH:mm').format(endDate);
+
+    return '$dateLabel • $startTime - $endTime';
+  }
+
 }

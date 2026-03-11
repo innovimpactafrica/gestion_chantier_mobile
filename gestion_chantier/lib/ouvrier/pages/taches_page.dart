@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:gestion_chantier/ouvrier/utils/DottedBorderPainter.dart';
@@ -39,20 +40,22 @@ class _TachesPageState extends State<TachesPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: HexColor('#F1F2F6'),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const _TachesHeader(),
-          const SizedBox(height: 10),
-          _TachesFilters(
-            filters: _filters,
-            selected: _selectedFilter,
-            onChanged: (i) => setState(() => _selectedFilter = i),
-          ),
-          const SizedBox(height: 18),
-          Expanded(
+    return Stack(
+      children: [
+        Container(
+          color: HexColor('#F1F2F6'),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const _TachesHeader(),
+              const SizedBox(height: 10),
+              _TachesFilters(
+                filters: _filters,
+                selected: _selectedFilter,
+                onChanged: (i) => setState(() => _selectedFilter = i),
+              ),
+              const SizedBox(height: 18),
+              Expanded(
             child: BlocProvider<UserNameSectionBloc>(
               create:
                   (_) =>
@@ -149,6 +152,8 @@ class _TachesPageState extends State<TachesPage> {
           ),
         ],
       ),
+        ),
+      ],
     );
   }
 }
@@ -712,7 +717,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
     final _ = _task.status == 'DONE';
     return DraggableScrollableSheet(
       expand: false,
-      initialChildSize: 0.85,
+      initialChildSize: 0.72,
       minChildSize: 0.5,
       maxChildSize: 0.95,
       builder: (context, scrollController) {
@@ -745,34 +750,31 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                       child: Text(
                         _task.title,
                         style: const TextStyle(
+                          fontFamily: 'Inter',
                           fontSize: 24,
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF1A365D),
+                          fontWeight: FontWeight.w700,
+                          color: Color(0xFF231F20),
+                          height: 1.0,
+                          letterSpacing: 0,
                         ),
                       ),
                     ),
                     const SizedBox(width: 8),
                     Container(
                       padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
+                        horizontal: 8,
+                        vertical: 4,
                       ),
                       decoration: BoxDecoration(
-                        color:
-                            _task.status == 'DONE'
-                                ? const Color(0xFFE8F8F1)
-                                : const Color(0xFFF1F3F6),
-                        borderRadius: BorderRadius.circular(12),
+                        color: const Color(0xFFF1F2F6),
+                        borderRadius: BorderRadius.circular(100),
                       ),
                       child: Text(
                         _mapStatus(_task.status),
-                        style: TextStyle(
-                          color:
-                              _task.status == 'DONE'
-                                  ? const Color(0xFF2ECC71)
-                                  : const Color(0xFF8A98A8),
+                        style: const TextStyle(
+                          color: Color(0xFF8A98A8),
                           fontWeight: FontWeight.w600,
-                          fontSize: 15,
+                          fontSize: 13,
                         ),
                       ),
                     ),
@@ -783,15 +785,19 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                   Text(
                     _task.description,
                     style: const TextStyle(
-                      color: Color(0xFF8A98A8),
+                      fontFamily: 'Inter',
+                      color: Color(0xFF6C757D),
+                      fontWeight: FontWeight.w400,
                       fontSize: 16,
+                      height: 24 / 16,
+                      letterSpacing: 0,
                     ),
                   ),
                 ],
                 const SizedBox(height: 20),
                 Row(
                   children: [
-                    const Icon(Icons.location_on, color: Color(0xFFFF5C02)),
+                    SvgPicture.asset('assets/icons/chantier.svg', width: 20, height: 20),
                     const SizedBox(width: 8),
                     const Text(
                       'Chantier',
@@ -811,25 +817,22 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-
-
-                   Container(
-                     width: 100,
-                     child: Row(
-                       children: [
-                         const Icon(Icons.date_range, color: Color(0xFFFF5C02)),
-                         const SizedBox(width: 8),
-                         const Text(
-                           'Date',
-                           style: TextStyle(
-                             color: Color(0xFF8A98A8),
-                             fontSize: 16,
-                           ),
-                         ),
-                       ],
-                     ),
-                   ),
-
+                    Container(
+                      width: 110,
+                      child: Row(
+                        children: [
+                          SvgPicture.asset('assets/icons/hor.svg', width: 20, height: 20),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Horaires',
+                            style: TextStyle(
+                              color: Color(0xFF8A98A8),
+                              fontSize: 16,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                     Expanded(
                       child: Text(
                         _formatTaskDate(_task),
@@ -845,7 +848,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.person, color: Color(0xFFFF5C02)),
+                    SvgPicture.asset('assets/icons/supervisor.svg', width: 20, height: 20),
                     const SizedBox(width: 8),
                     const Text(
                       'Superviseur',
@@ -864,7 +867,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                 const SizedBox(height: 12),
                 Row(
                   children: [
-                    const Icon(Icons.priority_high, color: Color(0xFFFF5C02)),
+                    SvgPicture.asset('assets/icons/priority-up.svg', width: 20, height: 20),
                     const SizedBox(width: 8),
                     const Text(
                       'Priorité',
@@ -881,20 +884,26 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                     ),
                   ],
                 ),
-                if (_task.documents.isNotEmpty) const SizedBox(height: 24),
-                if (_task.documents.isNotEmpty)
-                  const Text(
-                    'Documents',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 17,
-                      color: Color(0xFF8A98A8),
-                    ),
+                const SizedBox(height: 24),
+                const Text(
+                  'Documents',
+                  style: TextStyle(
+                    fontFamily: 'Inter',
+                    fontWeight: FontWeight.w600,
+                    fontSize: 16,
+                    height: 1.3,
+                    color: Color(0xFF6B7280),
                   ),
+                ),
                 const SizedBox(height: 10),
-                ..._task.documents
-                    .map((doc) => _DocumentTile(doc: doc))
-                    .toList(),
+                // TODO: retirer les docs de démo quand l'API retourne de vrais documents
+                ...(_task.documents.isNotEmpty
+                    ? _task.documents
+                    : [
+                        TaskDocument(id: 0, libelle: 'Plan de chantier', filePath: 'plan.pdf'),
+                        TaskDocument(id: 1, libelle: 'Rapport de travaux', filePath: 'rapport.docx'),
+                      ]
+                  ).map((doc) => _DocumentTile(doc: doc)).toList(),
                 const SizedBox(height: 30),
                 if (_error != null)
                   Padding(
@@ -921,13 +930,17 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                 if ((isInProgress || isTodo))
                   SizedBox(
                     width: double.infinity,
+                    height: 52,
                     child: ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFFF5C02),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(32),
+                          borderRadius: BorderRadius.circular(100),
                         ),
-                        padding: const EdgeInsets.symmetric(vertical: 18),
+                        padding: const EdgeInsets.symmetric(
+                          vertical: 16,
+                          horizontal: 12,
+                        ),
                       ),
                       onPressed: () {
                         _changeStatus();
@@ -1062,26 +1075,24 @@ class _DocumentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    String name = doc.libelle.isNotEmpty ? doc.libelle : doc.filePath;
-    String ext = doc.filePath.split('.').last.toLowerCase();
-    IconData icon;
-    Color color;
-    Color bgColor;
+    final String name = doc.libelle.isNotEmpty ? doc.libelle : doc.filePath;
+    final String ext = doc.filePath.split('.').last.toLowerCase();
+
+    final String svgIcon;
+    final Color bgColor;
     if (ext == 'pdf') {
-      icon = Icons.picture_as_pdf;
-      color = Colors.redAccent;
-      bgColor = const Color(0xFFFFEBEE);
+      svgIcon = 'assets/icons/pdf.svg';
+      bgColor = const Color(0x1ADD2025);
     } else if (ext == 'doc' || ext == 'docx') {
-      icon = Icons.description;
-      color = Colors.blueAccent;
-      bgColor = const Color(0xFFE3F0FF);
+      svgIcon = 'assets/icons/word.svg';
+      bgColor = const Color(0x1A103F91);
     } else {
-      icon = Icons.insert_drive_file;
-      color = Colors.grey;
+      svgIcon = 'assets/icons/pdf.svg';
       bgColor = const Color(0xFFF5F7FA);
     }
-    // Construction de l'URL du fichier (adapter selon ton backend)
+
     final String fileUrl = APIConstants.API_BASE_URL_IMG + doc.filePath;
+
     return InkWell(
       onTap: () async {
         final uri = Uri.parse(fileUrl);
@@ -1089,48 +1100,61 @@ class _DocumentTile extends StatelessWidget {
           await launchUrl(uri, mode: LaunchMode.externalApplication);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Impossible d’ouvrir le document.')),
+            const SnackBar(content: Text("Impossible d'ouvrir le document.")),
           );
         }
       },
       child: Container(
-        margin: const EdgeInsets.only(bottom: 10),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+        height: 64,
+        margin: const EdgeInsets.only(bottom: 12),
+        padding: const EdgeInsets.all(12),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: const Color(0xFFE0E0E0)),
+          border: Border.all(color: const Color(0xFFCBD5E1)),
         ),
         child: Row(
           children: [
             Container(
               width: 40,
               height: 40,
-              decoration: BoxDecoration(color: bgColor, shape: BoxShape.circle),
-              child: Icon(icon, color: color, size: 26),
+              decoration: BoxDecoration(
+                color: bgColor,
+                shape: BoxShape.circle,
+              ),
+              child: Center(
+                child: SvgPicture.asset(svgIcon, width: 24, height: 24),
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   Text(
                     name,
                     style: const TextStyle(
+                      fontFamily: 'Inter',
                       fontWeight: FontWeight.w600,
                       fontSize: 16,
+                      height: 21 / 16,
+                      letterSpacing: -0.32,
+                      color: Color(0xFF333333),
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    _getFakeFileSize(doc.filePath),
+                    style: const TextStyle(
+                      fontFamily: 'Inter',
+                      fontWeight: FontWeight.w400,
+                      fontSize: 13,
+                      height: 1.0,
+                      color: Color(0xFF666666),
                     ),
                   ),
-                  // Taille du fichier (si disponible)
-                  if (doc.filePath.contains('.pdf') ||
-                      doc.filePath.contains('.doc'))
-                    Text(
-                      _getFakeFileSize(doc.filePath),
-                      style: const TextStyle(
-                        color: Color(0xFF8A98A8),
-                        fontSize: 13,
-                      ),
-                    ),
                 ],
               ),
             ),

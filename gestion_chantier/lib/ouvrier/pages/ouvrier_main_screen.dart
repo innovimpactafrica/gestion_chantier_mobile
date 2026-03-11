@@ -16,34 +16,49 @@ class OuvrierMainScreen extends StatefulWidget {
 
 class OuvrierMainScreenState extends State<OuvrierMainScreen> {
   int selectedIndex = 0;
+  final PageController _pageController = PageController(initialPage: 0);
+
+  @override
+  void initState() {
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  void _onTabTapped(int index) {
+    setState(() => selectedIndex = index);
+    _pageController.animateToPage(
+      index,
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeInOut,
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final List<Widget> pages = [
-      AccueilOuvrierPage(
-        onVoirPlus: () {
-          setState(() {
-            selectedIndex = 1;
-          });
-        },
-      ),
-      const TachesPage(),
-      const PointagePage(),
-      const MonCompteOuvrierPage(),
-    ];
-
     return BlocProvider(
       create: (context) => AuthBloc(),
       child: Scaffold(
-        body: pages[selectedIndex],
+        body: PageView(
+          controller: _pageController,
+          onPageChanged: (index) => setState(() => selectedIndex = index),
+          children: [
+            AccueilOuvrierPage(
+              onVoirPlus: () => _onTabTapped(1),
+            ),
+            const TachesPage(),
+            const PointagePage(),
+            const MonCompteOuvrierPage(),
+          ],
+        ),
         backgroundColor: const Color(0xFFF5F7FA),
         bottomNavigationBar: OuvrierBottomNavigationBar(
           selectedIndex: selectedIndex,
-          onItemTapped: (index) {
-            setState(() {
-              selectedIndex = index;
-            });
-          },
+          onItemTapped: _onTabTapped,
         ),
       ),
     );

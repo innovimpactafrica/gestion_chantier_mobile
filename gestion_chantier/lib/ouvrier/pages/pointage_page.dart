@@ -362,37 +362,32 @@ class _PointageDuJourCardContentState
 
                             BlocBuilder<WorkerCheckBloc, WorkerCheckState>(
                               builder: (context, checkState) {
-                                return
-                                  InkWell(
-                                    child:  Container(
-                                      width: 90,
-                                      height: 90,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF5F7FA),
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      child: Icon(
-                                        Icons.qr_code_2,
-                                        color: HexColor('#1A365D'),
-                                        size: 56,
-                                      ),
+                                return InkWell(
+                                  child: Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF5F7FA),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              BlocProvider.value(
-                                                value: context.read<
-                                                    WorkerCheckBloc>(),
-                                                child: QRScannerPage(
-                                                    workerId: widget.workerId),
-                                              ),
+                                    child: Icon(
+                                      Icons.qr_code_2,
+                                      color: HexColor('#1A365D'),
+                                      size: 56,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => BlocProvider.value(
+                                          value: context.read<WorkerCheckBloc>(),
+                                          child: QRScannerPage(workerId: widget.workerId),
                                         ),
-                                      );
-                                    },
-                                  );
-
+                                      ),
+                                    );
+                                  },
+                                );
                               },
                             ),
 
@@ -606,37 +601,32 @@ class _PointageDuJourCardContentState
                           children: [
                             BlocBuilder<WorkerCheckBloc, WorkerCheckState>(
                               builder: (context, checkState) {
-                                return
-                                  InkWell(
-                                    child:  Container(
-                                      width: 90,
-                                      height: 90,
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFFF5F7FA),
-                                        borderRadius: BorderRadius.circular(18),
-                                      ),
-                                      child: Icon(
-                                        Icons.qr_code_2,
-                                        color: HexColor('#1A365D'),
-                                        size: 56,
-                                      ),
+                                return InkWell(
+                                  child: Container(
+                                    width: 90,
+                                    height: 90,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFF5F7FA),
+                                      borderRadius: BorderRadius.circular(18),
                                     ),
-                                    onTap: () {
-                                      Navigator.push(
-                                        context,
-                                        MaterialPageRoute(
-                                          builder: (_) =>
-                                              BlocProvider.value(
-                                                value: context.read<
-                                                    WorkerCheckBloc>(),
-                                                child: QRScannerPage(
-                                                    workerId: widget.workerId),
-                                              ),
+                                    child: Icon(
+                                      Icons.qr_code_2,
+                                      color: HexColor('#1A365D'),
+                                      size: 56,
+                                    ),
+                                  ),
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (_) => BlocProvider.value(
+                                          value: context.read<WorkerCheckBloc>(),
+                                          child: QRScannerPage(workerId: widget.workerId),
                                         ),
-                                      );
-                                    },
-                                  );
-
+                                      ),
+                                    );
+                                  },
+                                );
                               },
                             ),
 

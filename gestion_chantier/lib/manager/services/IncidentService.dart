@@ -37,30 +37,42 @@ class IncidentService {
   Future<void> addIncident({
     required String title,
     required String description,
-    required int propertyId,
+    int? propertyId,
     required List<File> pictures,
   }) async {
-    final formData = FormData.fromMap({
+    final map = <String, dynamic>{
       'title': title,
       'description': description,
-      'propertyId': propertyId,
-      'pictures': [
+    };
+
+    if (propertyId != null && propertyId > 0) {
+      map['propertyId'] = propertyId;
+    }
+
+    if (pictures.isNotEmpty) {
+      map['pictures'] = [
         for (final file in pictures)
           await MultipartFile.fromFile(
             file.path,
             filename: file.path.split('/').last,
           ),
-      ],
-    });
+      ];
+    }
 
-    final response = await _apiService.dio.post(
-      '/incidents/save',
-      data: formData,
-      options: Options(contentType: 'multipart/form-data'),
-    );
+    final formData = FormData.fromMap(map);
 
-    if (response.statusCode != 200 && response.statusCode != 201) {
-      throw Exception('Erreur lors de l\'ajout du signalement');
+    try {
+      final response = await _apiService.dio.post(
+        '/incidents/save',
+        data: formData,
+      );
+
+      if (response.statusCode != 200 && response.statusCode != 201) {
+        throw Exception('Erreur lors de l\'ajout du signalement');
+      }
+    } on DioException catch (e) {
+      print('[IncidentService] Erreur ${e.response?.statusCode}: ${e.response?.data}');
+      throw Exception('Erreur ${e.response?.statusCode}: ${e.response?.data}');
     }
   }
 

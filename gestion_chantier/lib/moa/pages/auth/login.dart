@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart';
+import 'package:gestion_chantier/shared/pages/auth/signup_screen.dart' show RegisterScreen;
 import 'package:gestion_chantier/shared/utils/HexColor.dart';
 import 'package:gestion_chantier/shared/services/routing_service.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
@@ -494,15 +494,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     Navigator.push(
                                       context,
                                       MaterialPageRoute(
-                                        builder:
-                                            (context) => UnifiedSignupScreen(
-                                              authBlocFactory:
-                                                  (context) => BlocProvider(
-                                                    create:
-                                                        (context) => AuthBloc(),
-                                                    child: const SizedBox(),
-                                                  ),
-                                            ),
+                                        builder: (_) => const RegisterScreen(),
                                       ),
                                     );
                                   },

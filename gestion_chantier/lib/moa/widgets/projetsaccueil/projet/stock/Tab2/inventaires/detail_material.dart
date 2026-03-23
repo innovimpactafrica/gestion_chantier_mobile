@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gestion_chantier/moa/models/RealEstateModel.dart';
 import 'package:gestion_chantier/moa/services/Materiaux_service.dart';
 import 'package:gestion_chantier/moa/widgets/projetsaccueil/projet/stock/Tab2/inventaires/inventaires.dart';
@@ -53,7 +54,7 @@ class DetailsMateriauScreen extends StatelessWidget {
               Row(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  Icon(materiau.icone, size: 36, color: Colors.black54),
+                  SvgPicture.asset(materiau.icone, width: 36, height: 36, colorFilter: const ColorFilter.mode(Colors.black54, BlendMode.srcIn)),
                   SizedBox(width: 12),
                   Expanded(
                     child: Text(

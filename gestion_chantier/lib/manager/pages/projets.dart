@@ -12,6 +12,7 @@ import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet_card.dart
 import 'package:gestion_chantier/manager/widgets/rstate/CreateRealEstateModal.dart';
 import 'package:gestion_chantier/ouvrier/utils/ToastUtils.dart';
 
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import '../../shared/utils/constant.dart';
 import '../utils/url_launcher.dart';
 
@@ -52,9 +53,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
 
   void _onProjetTap(RealEstateModel projet) {
     if (projet.blocked) {
-      ToastUtils.show(
-          'Le créateur du projet doit renouveler son abonnement pour débloquer les fonctionnalités.'
-      );
+      ToastUtils.show(AppLocalizations.of(context)!.projetsBlocked);
     } else {
       Navigator.push(
         context,
@@ -70,18 +69,18 @@ class _ProjetsPageState extends State<ProjetsPage> {
       context: context,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text('Rechercher un projet'),
+          title: Text(AppLocalizations.of(context)!.projetsSearchTitle),
           content: TextField(
             controller: searchController,
             decoration: InputDecoration(
-              hintText: 'Nom ou lieu du projet...',
+              hintText: AppLocalizations.of(context)!.projetsSearchHint,
               prefixIcon: Icon(Icons.search),
             ),
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(context).pop(),
-              child: Text('Fermer'),
+              child: Text(AppLocalizations.of(context)!.close),
             ),
           ],
         );
@@ -108,30 +107,28 @@ class _ProjetsPageState extends State<ProjetsPage> {
                 context: context,
                 builder: (ctx) =>
                     AlertDialog(
-                      title: const Text("Abonnement requis"),
-                      content: const Text(
-                          "Vous devez vous abonner pour pouvoir créer un chantier."),
-                      actions: [
-                        TextButton(
-                          onPressed: () => Navigator.pop(ctx),
-                          child: const Text("Annuler"),
-                        ),
-                        ElevatedButton(
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Theme.of(context).primaryColor,
-                          ),
-                          onPressed: () {
-                            Navigator.pop(ctx); // fermer le dialog
-                            UrlLauncher().openWebLink(
-                                '${BTPConst.BASE_LINK}/sub/${widget
-                                    .currentUserId}/${widget.profil}');
-                          },
-                          child: const Text(
-                            "S'abonner",
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ),
-                      ],
+                      title: Text(AppLocalizations.of(context)!.projetsSubscriptionRequired),
+          content: Text(AppLocalizations.of(context)!.projetsSubscriptionMessage),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text(AppLocalizations.of(context)!.projetsSubscriptionCancel),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: Theme.of(context).primaryColor,
+              ),
+              onPressed: () {
+                Navigator.pop(ctx);
+                UrlLauncher().openWebLink(
+                    '${BTPConst.BASE_LINK}/sub/${widget.currentUserId}/${widget.profil}');
+              },
+              child: Text(
+                AppLocalizations.of(context)!.projetsSubscriptionSubscribe,
+                style: TextStyle(color: Colors.white),
+              ),
+            ),
+          ],
                     ),
               );
               return; // ne pas ouvrir le BottomSheet
@@ -179,7 +176,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
             } else if (state is ProjetsErrorState) {
               return _buildErrorWidget(state.message);
             }
-            return Center(child: Text('Aucun projet disponible'));
+            return Center(child: Text(AppLocalizations.of(context)!.projetsNoneAvailable));
           },
         ),
       ),);
@@ -189,11 +186,8 @@ class _ProjetsPageState extends State<ProjetsPage> {
     return AppBar(
       automaticallyImplyLeading: false,
       centerTitle: false,
-      title: Container(
-        alignment: Alignment.centerLeft,
-        // margin: EdgeInsets.only(right: 210),
-        child: Text(
-          'Projets',
+      title: Text(
+          AppLocalizations.of(context)!.projetsTitle,
           textAlign: TextAlign.start,
           style: TextStyle(
             fontSize: 24,
@@ -201,7 +195,6 @@ class _ProjetsPageState extends State<ProjetsPage> {
             color: Colors.white,
           ),
         ),
-      ),
       backgroundColor: HexColor('#1A365D'),
       actions: [
         IconButton(
@@ -214,7 +207,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
 
   Widget _buildProjectsList(List<RealEstateModel> projets) {
     if (projets.isEmpty) {
-      return Center(child: Text('Aucun projet trouvé'));
+      return Center(child: Text(AppLocalizations.of(context)!.projetsNoneFound));
     }
 
     return RefreshIndicator(
@@ -258,7 +251,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
           Icon(Icons.error_outline, size: 64, color: Colors.red[400]),
           SizedBox(height: 16),
           Text(
-            'Erreur de chargement',
+            AppLocalizations.of(context)!.projetsLoadingError,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -283,7 +276,7 @@ class _ProjetsPageState extends State<ProjetsPage> {
               backgroundColor: HexColor('#1A365D'),
               foregroundColor: Colors.white,
             ),
-            child: Text('Réessayer'),
+            child: Text(AppLocalizations.of(context)!.projetsRetry),
           ),
         ],
       ),

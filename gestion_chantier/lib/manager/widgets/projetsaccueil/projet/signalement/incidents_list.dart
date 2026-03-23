@@ -5,6 +5,8 @@ import 'package:gestion_chantier/manager/models/IncidentModel.dart';
 import 'package:gestion_chantier/manager/services/IncidentService.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
+import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/signalement/incident_analysis_page.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/shared/utils/openFileUtil.dart';
 
 class IncidentsListWidget extends StatefulWidget {
@@ -43,7 +45,7 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                 Icon(Icons.error_outline, size: 64, color: Colors.grey[400]),
                 SizedBox(height: 16),
                 Text(
-                  'Erreur lors du chargement',
+                  AppLocalizations.of(context)!.incidentsLoadingError,
                   style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w500,
@@ -67,7 +69,7 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                     backgroundColor: HexColor('#1A365D'),
                     foregroundColor: Colors.white,
                   ),
-                  child: Text('Réessayer'),
+                  child: Text(AppLocalizations.of(context)!.incidentsRetry),
                 ),
               ],
             ),
@@ -87,7 +89,7 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                   ),
                   SizedBox(height: 16),
                   Text(
-                    'Aucun signalement',
+                    AppLocalizations.of(context)!.incidentsEmpty,
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.w500,
@@ -96,7 +98,7 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                   ),
                   SizedBox(height: 8),
                   Text(
-                    'Aucun incident n\'a été signalé pour ce projet',
+                    AppLocalizations.of(context)!.incidentsEmptySubtitle,
                     style: TextStyle(fontSize: 14, color: Colors.grey[500]),
                     textAlign: TextAlign.center,
                   ),
@@ -124,7 +126,11 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
 
   Widget _buildSignalementCard(IncidentModel incident, int index) {
     return GestureDetector(
-      onTap: () => _showIncidentDetails(context, incident),
+      onTap: () => Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => IncidentAnalysisPage(incident: incident),
+        ),
+      ),
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
@@ -406,21 +412,21 @@ class _IncidentsListWidgetState extends State<IncidentsListWidget> {
                             context: context,
                             builder:
                                 (ctx) => AlertDialog(
-                                  title: Text('Supprimer le signalement'),
+                                  title: Text(AppLocalizations.of(context)!.incidentsDeleteTitle),
                                   content: Text(
-                                    'Voulez-vous vraiment supprimer ce signalement ?',
+                                    AppLocalizations.of(context)!.incidentsDeleteMessage,
                                   ),
                                   actions: [
                                     TextButton(
                                       onPressed:
                                           () => Navigator.of(ctx).pop(false),
-                                      child: Text('Annuler'),
+                                      child: Text(AppLocalizations.of(context)!.incidentsDeleteCancel),
                                     ),
                                     TextButton(
                                       onPressed:
                                           () => Navigator.of(ctx).pop(true),
                                       child: Text(
-                                        'Supprimer',
+                                        AppLocalizations.of(context)!.incidentsDeleteConfirm,
                                         style: TextStyle(color: Colors.red),
                                       ),
                                     ),

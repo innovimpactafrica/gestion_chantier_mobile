@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/manager/bloc/auth/auth_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/budget/budget_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/home/home_bloc.dart';
@@ -81,9 +82,9 @@ class CustomBottomNavigationBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final navItems = [
-      _buildNavItem(context, 0, 'home', 'Accueil'),
-      _buildNavItem(context, 1, 'doc', 'Projets'),
-      _buildNavItem(context, 2, 'user', 'Mon compte'),
+      _buildNavItem(context, 0, 'home', AppLocalizations.of(context)!.navHome),
+      _buildNavItem(context, 1, 'doc', AppLocalizations.of(context)!.navProjects),
+      _buildNavItem(context, 2, 'user', AppLocalizations.of(context)!.navAccount),
     ];
 
     return Container(

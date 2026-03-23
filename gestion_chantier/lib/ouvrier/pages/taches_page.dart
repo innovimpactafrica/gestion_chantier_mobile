@@ -8,6 +8,7 @@ import '../bloc/username/user_name_section_bloc.dart';
 import '../bloc/username/user_name_section_event.dart';
 import '../bloc/username/user_name_section_state.dart';
 import '../repository/auth_repository.dart';
+import 'package:gestion_chantier/manager/models/documents.dart';
 import '../bloc/worker/worker_tasks_bloc.dart';
 import '../bloc/worker/worker_tasks_event.dart';
 import '../bloc/worker/worker_tasks_state.dart';
@@ -610,6 +611,7 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
   bool _loading = false;
   String? _error;
   late TaskModel _task;
+  List<DocumentModel> _documents = [];
 
   @override
   void initState() {
@@ -628,6 +630,16 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
         _task = detail;
         _loading = false;
       });
+      // Charger les documents liés au projet de la tâche
+      final propertyId = detail.realEstateProperty?.id;
+      if (propertyId != null) {
+        final docs = await DocumentRepository().getDocumentsByProperty(propertyId);
+        if (mounted) {
+          setState(() {
+            _documents = docs;
+          });
+        }
+      }
     } catch (e) {
       setState(() {
         _error = 'Erreur lors du chargement du détail de la tâche';
@@ -896,14 +908,24 @@ class _TaskDetailBottomSheetState extends State<TaskDetailBottomSheet> {
                   ),
                 ),
                 const SizedBox(height: 10),
-                // TODO: retirer les docs de démo quand l'API retourne de vrais documents
-                ...(_task.documents.isNotEmpty
-                    ? _task.documents
-                    : [
-                        TaskDocument(id: 0, libelle: 'Plan de chantier', filePath: 'plan.pdf'),
-                        TaskDocument(id: 1, libelle: 'Rapport de travaux', filePath: 'rapport.docx'),
-                      ]
-                  ).map((doc) => _DocumentTile(doc: doc)).toList(),
+                if (_task.documents.isNotEmpty)
+                  ..._task.documents.map((doc) => _DocumentTile(doc: doc))
+                else if (_documents.isNotEmpty)
+                  ..._documents.map((doc) => _DocumentTile(
+                        doc: TaskDocument(
+                          id: doc.id,
+                          libelle: doc.title,
+                          filePath: doc.file,
+                        ),
+                      ))
+                else
+                  const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8),
+                    child: Text(
+                      'Aucun document disponible',
+                      style: TextStyle(color: Color(0xFF8A98A8), fontSize: 14),
+                    ),
+                  ),
                 const SizedBox(height: 30),
                 if (_error != null)
                   Padding(

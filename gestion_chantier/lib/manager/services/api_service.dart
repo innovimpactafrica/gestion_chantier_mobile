@@ -86,6 +86,7 @@ class ApiService {
       "/documents",
       "/units",
       "/incidents",
+      "/incident-rapports",
     ];
     for (var api in protectedApis) {
       if (options.uri.toString().contains(api)) {

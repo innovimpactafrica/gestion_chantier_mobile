@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:gestion_chantier/manager/services/api_service.dart';
 import '../models/worker_dashboard_model.dart';
 import '../models/MonthlySummaryModel.dart';
@@ -50,27 +51,25 @@ class WorkerService {
   }
 
   Future<PresenceHistoryModel> fetchPresenceHistory(int workerId, [String? date]) async {
-    String url;
+    final url = date != null && date.isNotEmpty
+        ? '/workers/$workerId/presence-history?date=$date'
+        : '/workers/$workerId/presence-history';
+
+    print("Request URL: $url");
 
     try {
-      if (date != null && date.isNotEmpty) {
-        // Si une date est fournie, utiliser l'endpoint presence-history avec la date
-        url = '/workers/$workerId/presence-history?date=$date';
-      } else {
-        // Si aucune date n'est fournie, utiliser l'endpoint monthly-summary
-        url = '/workers/$workerId/presence-history';
-      }
-
-      print("Request URL: $url");
-
       final response = await _apiService.dio.get(url);
-
-      // Assurez-vous que la réponse est valide avant de la traiter
       if (response.statusCode == 200) {
         return PresenceHistoryModel.fromJson(response.data);
-      } else {
-        throw Exception('Failed to load data: ${response.statusCode}');
       }
+      return PresenceHistoryModel(logs: [], totalWorkedTime: '');
+    } on DioException catch (e) {
+      // Le serveur renvoie 400 quand aucune présence n'existe pour la date
+      if (e.response?.statusCode == 400) {
+        return PresenceHistoryModel(logs: [], totalWorkedTime: '');
+      }
+      print("Error: $e");
+      rethrow;
     } catch (e) {
       print("Error: $e");
       rethrow;

@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
+import 'package:gestion_chantier/shared/widgets/network_image_or_svg.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 
 class MainProjetCard extends StatelessWidget {
   final RealEstateModel projet;
@@ -39,22 +41,18 @@ class MainProjetCard extends StatelessWidget {
                 color: Colors.grey[300],
               ),
               child: ClipRRect(
-                borderRadius: BorderRadius.horizontal(
-                  left: Radius.circular(12),
-                ),
-                child: Image.network(
-                  '${APIConstants.API_BASE_URL_IMG}${projet.plan}',
+                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
+                child: NetworkImageOrSvg(
+                  url: '${APIConstants.API_BASE_URL_IMG}${projet.plan}',
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-
             Padding(
               padding: EdgeInsets.all(16),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Titre du projet
                   Text(
                     projet.name,
                     style: TextStyle(
@@ -63,9 +61,7 @@ class MainProjetCard extends StatelessWidget {
                       color: HexColor('#1A365D'),
                     ),
                   ),
-
                   SizedBox(height: 8),
-                  // Lieu et dates
                   Row(
                     children: [
                       Icon(
@@ -86,12 +82,11 @@ class MainProjetCard extends StatelessWidget {
                       ),
                     ],
                   ),
-
                   SizedBox(height: 14),
-                  // Progression
                   _buildProgressSection(
                     progression: projet.averageProgress!.round(),
                     isMain: true,
+                    context: context,
                   ),
                 ],
               ),
@@ -145,14 +140,12 @@ class SecondaryProjetCard extends StatelessWidget {
                 borderRadius: BorderRadius.horizontal(
                   left: Radius.circular(12),
                 ),
-                child: Image.network(
-                  '${APIConstants.API_BASE_URL_IMG}${projet.plan}',
+                child: NetworkImageOrSvg(
+                  url: '${APIConstants.API_BASE_URL_IMG}${projet.plan}',
                   fit: BoxFit.cover,
                 ),
               ),
             ),
-
-            // Contenu du projet
             Expanded(
               child: Padding(
                 padding: EdgeInsets.only(left: 10, right: 10, bottom: 16),
@@ -170,9 +163,7 @@ class SecondaryProjetCard extends StatelessWidget {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                     ),
-
                     SizedBox(height: 8),
-
                     Row(
                       children: [
                         Icon(
@@ -193,12 +184,11 @@ class SecondaryProjetCard extends StatelessWidget {
                         ),
                       ],
                     ),
-
                     SizedBox(height: 6),
-
                     _buildProgressSection(
                       progression: projet.averageProgress!.round(),
                       isMain: false,
+                      context: context,
                     ),
                   ],
                 ),
@@ -211,14 +201,14 @@ class SecondaryProjetCard extends StatelessWidget {
   }
 }
 
-Widget _buildProgressSection({required int progression, required bool isMain}) {
+Widget _buildProgressSection({required int progression, required bool isMain, required BuildContext context}) {
   return Column(
     children: [
       Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Text(
-            'Progression',
+            AppLocalizations.of(context)!.progression,
             style: TextStyle(
               fontSize: 13,
               color: HexColor('#64748B'),

@@ -98,7 +98,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                   ),
                   SizedBox(height: 4),
                   Text(
-                    'BTP CONNECT',
+                    'BTP Cloud',
                     style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.bold,

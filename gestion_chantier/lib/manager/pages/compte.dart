@@ -11,8 +11,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_switch/flutter_switch.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/ouvrier/utils/ToastUtils.dart';
 import 'package:gestion_chantier/ouvrier/utils/profile_utils.dart';
+import 'package:gestion_chantier/shared/bloc/locale_bloc.dart';
 import '../../manager/bloc/auth/auth_bloc.dart';
 import '../../manager/bloc/auth/auth_event.dart';
 import '../../manager/bloc/auth/auth_state.dart';
@@ -20,6 +22,7 @@ import '../../services/PushNotificationService.dart';
 import '../../shared/utils/constant.dart';
 import '../models/UserModel.dart';
 import '../services/AuthService.dart';
+import '../utils/constant.dart' as managerConst;
 
 //import '../bloc/auth/auth_bloc.dart';
 //import '../bloc/auth/auth_event.dart';
@@ -87,7 +90,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
           builder: (context, state) {
             return AlertDialog(
               title: Text(
-                'Changer le mot de passe',
+                AppLocalizations.of(context)!.accountChangePasswordTitle,
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               content: Form(
@@ -100,12 +103,12 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                       keyboardType: TextInputType.emailAddress,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Veuillez saisir votre email';
+                          return AppLocalizations.of(context)!.accountEmailRequired;
                         }
                         return null;
                       },
                       decoration: InputDecoration(
-                        hintText: 'Votre email',
+                        hintText: AppLocalizations.of(context)!.accountEmailHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -117,12 +120,12 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                       obscureText: true,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Veuillez saisir votre mot de passe actuel';
+                          return AppLocalizations.of(context)!.accountCurrentPasswordRequired;
                         }
                         return null;
                       },
                       decoration: InputDecoration(
-                        hintText: 'Mot de passe actuel',
+                        hintText: AppLocalizations.of(context)!.accountCurrentPasswordHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -134,12 +137,12 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                       obscureText: true,
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Veuillez saisir un nouveau mot de passe';
+                          return AppLocalizations.of(context)!.accountNewPasswordRequired;
                         }
                         return null;
                       },
                       decoration: InputDecoration(
-                        hintText: 'Nouveau mot de passe',
+                        hintText: AppLocalizations.of(context)!.accountNewPasswordHint,
                         border: OutlineInputBorder(
                           borderRadius: BorderRadius.circular(8),
                         ),
@@ -151,7 +154,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(),
-                  child: Text('Annuler'),
+                  child: Text(AppLocalizations.of(context)!.accountChangePasswordCancel),
                 ),
                 ElevatedButton(
                   onPressed: state is AuthLoadingState
@@ -169,7 +172,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                   },
                   child: state is AuthLoadingState
                       ? CircularProgressIndicator()
-                      : Text('Changer'),
+                      : Text(AppLocalizations.of(context)!.accountChangePasswordConfirm),
                 ),
               ],
             );
@@ -197,15 +200,12 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
           backgroundColor: const Color(0xFF1A365D),
           elevation: 0,
           toolbarHeight: 50,
-          title: const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Mon compte',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.w600,
-              ),
+          title: const Text(
+            'Mon compte',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 24,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -254,7 +254,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                           currentUser?.photo != null &&
                               currentUser!.photo!.isNotEmpty
                               ? Image.network(
-                            currentUser!.photo!,
+                            '${managerConst.APIConstants.API_BASE_URL_IMG}${currentUser!.photo!}',
                             fit: BoxFit.cover,
                             width: 94,
                             height: 94,
@@ -346,7 +346,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                         height: 24,
                         color: const Color(0xFFFF5C02),
                       ),
-                      title: 'Notifications',
+                      title: AppLocalizations.of(context)!.accountNotifications,
                       trailing: SizedBox(
                         width: 40,
                         height: 22,
@@ -366,6 +366,44 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                           padding: 2.0,
                         ),
                       ),
+                    ),
+                    const Divider(height: 0.5, thickness: 1, color: Color(0xFFE0E0E0)),
+                    // Langue
+                    BlocBuilder<LocaleBloc, LocaleState>(
+                      builder: (context, localeState) {
+                        final isFr = localeState.locale.languageCode == 'fr';
+                        return _buildListTile(
+                          icon: const Icon(
+                            Icons.translate,
+                            size: 24,
+                            color: Color(0xFFFF5C02),
+                          ),
+                          title: isFr ? AppLocalizations.of(context)!.accountLanguage : AppLocalizations.of(context)!.accountLanguage,
+                          trailing: SizedBox(
+                            width: 40,
+                            height: 22,
+                            child: FlutterSwitch(
+                              width: 40,
+                              height: 22,
+                              toggleSize: 18,
+                              value: !isFr,
+                              onToggle: (val) {
+                                context.read<LocaleBloc>().add(
+                                  ChangeLocaleEvent(
+                                    Locale(val ? 'en' : 'fr'),
+                                  ),
+                                );
+                              },
+                              activeColor: const Color(0xFFFF5C02),
+                              inactiveColor: const Color(0xFFBFC5D2),
+                              toggleColor: Colors.white,
+                              showOnOff: false,
+                              borderRadius: 20.0,
+                              padding: 2.0,
+                            ),
+                          ),
+                        );
+                      },
                     ),
                     /* const Divider(
                               height: 0.5,
@@ -410,7 +448,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                               height: 24,
                               color: const Color(0xFFFF5C02),
                             ),
-                            title: 'Changer mon mot de passe',
+                            title: AppLocalizations.of(context)!.accountChangePassword,
                             onTap: () async {
                               _showChangePasswordDialog( context);
                             },
@@ -446,7 +484,7 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                               height: 24,
                               color: const Color(0xFFFF5C02),
                             ),
-                            title: 'Se déconnecter',
+                            title: AppLocalizations.of(context)!.accountLogout,
                             onTap: () async {
                               final confirmed = await showDialog<bool>(
                                 context: context,
@@ -456,14 +494,14 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                                     borderRadius:
                                     BorderRadius.circular(18),
                                   ),
-                                  title: const Text(
-                                    'Déconnexion',
+                                  title: Text(
+                                    AppLocalizations.of(context)!.accountLogoutTitle,
                                     style: TextStyle(
                                       fontWeight: FontWeight.bold,
                                     ),
                                   ),
-                                  content: const Text(
-                                    'Êtes-vous sûr de vouloir vous déconnecter ?',
+                                  content: Text(
+                                    AppLocalizations.of(context)!.accountLogoutMessage,
                                   ),
                                   actions: [
                                     TextButton(
@@ -471,15 +509,15 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                                           () => Navigator.of(
                                         context,
                                       ).pop(false),
-                                      child: const Text('Annuler'),
+                                      child: Text(AppLocalizations.of(context)!.accountLogoutCancel),
                                     ),
                                     TextButton(
                                       onPressed:
                                           () => Navigator.of(
                                         context,
                                       ).pop(true),
-                                      child: const Text(
-                                        'Se déconnecter',
+                                      child: Text(
+                                        AppLocalizations.of(context)!.accountLogoutConfirm,
                                         style: TextStyle(
                                           color: Color(0xFFFF5C02),
                                           fontWeight:
@@ -506,9 +544,9 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                                 ScaffoldMessenger.of(
                                   context,
                                 ).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
-                                      'Vous avez été déconnecté avec succès.',
+                                      AppLocalizations.of(context)!.accountLogoutSuccess,
                                     ),
                                     duration: Duration(seconds: 2),
                                   ),

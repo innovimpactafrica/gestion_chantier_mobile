@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/manager/bloc/commades/commandes_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/commades/commandes_event.dart';
 import 'package:gestion_chantier/manager/bloc/commades/commandes_state.dart';
@@ -103,7 +104,7 @@ class _CommandesTabState extends State<CommandesTab> {
 
   Widget _buildHeader() {
     return Text(
-      'Commandes',
+      AppLocalizations.of(context)!.commandesTitle,
       style: TextStyle(
         fontSize: 20,
         fontWeight: FontWeight.w700,
@@ -156,7 +157,7 @@ class _CommandesTabState extends State<CommandesTab> {
             ),
             SizedBox(height: 16),
             Text(
-              'Chargement des commandes...',
+              AppLocalizations.of(context)!.commandesLoading,
               style: TextStyle(fontSize: 16, color: HexColor('#6B7280')),
             ),
           ],
@@ -185,7 +186,7 @@ class _CommandesTabState extends State<CommandesTab> {
           Icon(Icons.error_outline, size: 48, color: HexColor('#DC2626')),
           SizedBox(height: 16),
           Text(
-            'Erreur de chargement',
+            AppLocalizations.of(context)!.commandesLoadingError,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -209,7 +210,7 @@ class _CommandesTabState extends State<CommandesTab> {
               backgroundColor: HexColor('#FF5C02'),
               foregroundColor: Colors.white,
             ),
-            child: Text('Réessayer'),
+            child: Text(AppLocalizations.of(context)!.commandesRetry),
           ),
         ],
       ),
@@ -240,7 +241,7 @@ class _CommandesTabState extends State<CommandesTab> {
           ),
           SizedBox(height: 16),
           Text(
-            'Aucune commande',
+            AppLocalizations.of(context)!.commandesEmpty,
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
@@ -249,7 +250,7 @@ class _CommandesTabState extends State<CommandesTab> {
           ),
           SizedBox(height: 8),
           Text(
-            'Aucune commande en attente pour ce projet',
+            AppLocalizations.of(context)!.commandesEmptySubtitle,
             textAlign: TextAlign.center,
             style: TextStyle(fontSize: 14, color: HexColor('#6B7280')),
           ),
@@ -428,22 +429,22 @@ class _CommandesTabState extends State<CommandesTab> {
       case StatutCommande.livree:
         couleurBackground = HexColor('#D1FAE5');
         couleurTexte = HexColor('#059669');
-        texte = 'Livrée';
+        texte = AppLocalizations.of(context)!.commandesStatusDelivered;
         break;
       case StatutCommande.enLivraison:
         couleurBackground = HexColor('#DBEAFE');
         couleurTexte = HexColor('#2563EB');
-        texte = 'En livraison';
+        texte = AppLocalizations.of(context)!.commandesStatusInTransit;
         break;
       case StatutCommande.enAttente:
         couleurBackground = HexColor('#FEF3C7');
         couleurTexte = HexColor('#D97706');
-        texte = 'En attente';
+        texte = AppLocalizations.of(context)!.commandesStatusPending;
         break;
       case StatutCommande.annulee:
         couleurBackground = HexColor('#FEE2E2');
         couleurTexte = HexColor('#DC2626');
-        texte = 'Annulée';
+        texte = AppLocalizations.of(context)!.commandesStatusCancelled;
         break;
     }
 

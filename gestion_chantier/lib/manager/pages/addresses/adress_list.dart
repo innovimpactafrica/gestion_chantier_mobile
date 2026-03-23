@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../services/AuthService.dart';
+import '../../utils/constant.dart';
 import '../../models/UserModel.dart';
 import '../../services/PointageService.dart';
 import '../addresses/add_address_page.dart';
@@ -111,7 +112,7 @@ class _AppHeader extends StatelessWidget {
                                 currentUser!.photo!.isNotEmpty
                             ? ClipOval(
                               child: Image.network(
-                                currentUser!.photo!,
+                                '${APIConstants.API_BASE_URL_IMG}${currentUser!.photo!}',
                                 fit: BoxFit.cover,
                                 errorBuilder: (context, error, stackTrace) {
                                   return const Icon(

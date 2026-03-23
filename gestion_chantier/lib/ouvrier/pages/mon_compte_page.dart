@@ -7,6 +7,7 @@ import '../../manager/bloc/auth/auth_event.dart';
 import '../../manager/bloc/auth/auth_state.dart';
 import '../../services/PushNotificationService.dart';
 import '../../shared/utils/constant.dart';
+import '../utils/constant.dart' as ouvrierConst;
 import '../models/UserModel.dart';
 import '../services/AuthService.dart';
 
@@ -41,11 +42,13 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
     });
     try {
       final data = await AuthService().connectedUser();
+      if (!mounted) return;
       setState(() {
         currentUser = UserModel.fromJson(data);
         isLoading = false;
       });
     } catch (e) {
+      if (!mounted) return;
       setState(() {
         error = e.toString();
         isLoading = false;
@@ -244,7 +247,7 @@ class _MonCompteOuvrierPageState extends State<MonCompteOuvrierPage> {
                                       currentUser?.photo != null &&
                                               currentUser!.photo!.isNotEmpty
                                           ? Image.network(
-                                            currentUser!.photo!,
+                                            '${ouvrierConst.APIConstants.API_BASE_URL_IMG}${currentUser!.photo!}',
                                             fit: BoxFit.cover,
                                             width: 94,
                                             height: 94,

@@ -1,3 +1,4 @@
+import 'package:gestion_chantier/manager/models/IncidentAnalysisModel.dart';
 import 'package:gestion_chantier/manager/models/IncidentModel.dart';
 import 'package:gestion_chantier/manager/services/api_service.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
@@ -73,6 +74,27 @@ class IncidentService {
     } on DioException catch (e) {
       print('[IncidentService] Erreur ${e.response?.statusCode}: ${e.response?.data}');
       throw Exception('Erreur ${e.response?.statusCode}: ${e.response?.data}');
+    }
+  }
+
+  Future<IncidentAnalysisModel?> getIncidentRapport(int incidentId) async {
+    try {
+      final response = await _apiService.dio.get('/incident-rapports/by-incident/$incidentId');
+      if (response.statusCode == 200 && response.data != null) {
+        return IncidentAnalysisModel.fromJson(response.data);
+      }
+      return null;
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404) return null;
+      throw Exception('Erreur de connexion: $e');
+    }
+  }
+
+  Future<void> generateIncidentRapport(int incidentId) async {
+    try {
+      await _apiService.dio.post('/incident-rapports/notify-webhook/$incidentId');
+    } catch (e) {
+      throw Exception('Erreur génération rapport: $e');
     }
   }
 

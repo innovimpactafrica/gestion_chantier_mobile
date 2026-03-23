@@ -1,6 +1,7 @@
 // widgets/home/overview_card_widget.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/manager/bloc/Task/task_state.dart';
 import 'package:gestion_chantier/manager/bloc/budget/budget_bloc.dart';
 import 'package:gestion_chantier/manager/bloc/budget/budget_state.dart';
@@ -14,14 +15,15 @@ class OverviewCardWidget extends StatelessWidget {
   RealEstateKpiStatusModel? kpiStatus;
   final double budgetPercentage;
 
-   OverviewCardWidget({
+  OverviewCardWidget({
     super.key,
-     this.kpiStatus,
+    this.kpiStatus,
     required this.budgetPercentage,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(15),
@@ -33,7 +35,7 @@ class OverviewCardWidget extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Vue d\'ensemble des chantiers',
+            l10n.overviewTitle,
             style: TextStyle(
               fontSize: 20,
               fontWeight: FontWeight.w700,
@@ -45,35 +47,34 @@ class OverviewCardWidget extends StatelessWidget {
 
           Row(
             children: [
-              // Statistics avec données réelles
               Expanded(
                 flex: 2,
                 child: BlocBuilder<TaskBloc, TaskState>(
                   builder: (context, state) {
-                    return _buildStatistics(state);
+                    return _buildStatistics(context, state);
                   },
                 ),
               ),
 
               const SizedBox(width: 16),
 
-              // Budget Progress avec données réelles
               BlocBuilder<BudgetBloc, BudgetState>(
                 builder: (context, state) {
-                  return _buildBudgetProgress(state);
+                  return _buildBudgetProgress(context, state);
                 },
               ),
             ],
           ),
 
-          // Section budget détaillée
           const SizedBox(height: 20),
         ],
       ),
     );
   }
 
-  Widget _buildStatistics(TaskState state) {
+  Widget _buildStatistics(BuildContext context, TaskState state) {
+    final l10n = AppLocalizations.of(context)!;
+
     if (state is TaskLoading) {
       return SizedBox(
         height: 160,
@@ -85,44 +86,13 @@ class OverviewCardWidget extends StatelessWidget {
       );
     }
 
-    if (state is TaskLoaded) {
-      final taskModel = state.taskModel;
-      return Column(
-        children: [
-          _buildStatRow(
-            'En cours',
-            kpiStatus!=null? kpiStatus!.inProgress:0,
-            HexColor('#CBD5E1'),
-          ),
-          const SizedBox(height: 10),
-          _buildStatRow(
-            'En retard',
-            kpiStatus!=null? kpiStatus!.delayed:0,
-            HexColor('#E74C3C'),
-          ),
-          const SizedBox(height: 10),
-          _buildStatRow(
-            'En attente',
-            kpiStatus!=null?  kpiStatus!.pending:0,
-            HexColor('#F39C12'),
-          ),
-          const SizedBox(height: 10),
-          _buildStatRow(
-            'Terminées',
-            kpiStatus!=null? kpiStatus!.completed:0,
-            HexColor('#2ECC71'),
-          ),
-        ],
-      );
-    }
-
     if (state is TaskError) {
       return Column(
         children: [
           Icon(Icons.error_outline, color: HexColor('#E74C3C'), size: 30),
           const SizedBox(height: 8),
           Text(
-            'Erreur de chargement\ndes statistiques',
+            l10n.errorStats,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 12,
@@ -131,41 +101,32 @@ class OverviewCardWidget extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 16),
-          // Afficher les données de fallback
-          _buildFallbackStatistics(),
+          _buildStatRows(context),
         ],
       );
     }
 
-    // État initial - afficher les données mockées
+    return _buildStatRows(context);
+  }
+
+  Widget _buildStatRows(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       children: [
-        _buildStatRow('En cours',kpiStatus!=null? kpiStatus!.inProgress:0, HexColor('#CBD5E1')),
+        _buildStatRow(l10n.overviewInProgress, kpiStatus?.inProgress ?? 0, HexColor('#CBD5E1')),
         const SizedBox(height: 10),
-        _buildStatRow('En retard', kpiStatus!=null? kpiStatus!.delayed:0, HexColor('#E74C3C')),
+        _buildStatRow(l10n.overviewDelayed, kpiStatus?.delayed ?? 0, HexColor('#E74C3C')),
         const SizedBox(height: 10),
-        _buildStatRow('En attente',kpiStatus!=null?  kpiStatus!.pending:0, HexColor('#F39C12')),
+        _buildStatRow(l10n.overviewPending, kpiStatus?.pending ?? 0, HexColor('#F39C12')),
         const SizedBox(height: 10),
-        _buildStatRow('Terminées', kpiStatus!=null? kpiStatus!.completed:0, HexColor('#2ECC71')),
+        _buildStatRow(l10n.overviewCompleted, kpiStatus?.completed ?? 0, HexColor('#2ECC71')),
       ],
     );
   }
 
-  Widget _buildFallbackStatistics() {
-    return Column(
-      children: [
-        _buildStatRow('En cours',kpiStatus!=null? kpiStatus!.inProgress:0, HexColor('#CBD5E1')),
-        const SizedBox(height: 10),
-        _buildStatRow('En retard', kpiStatus!=null? kpiStatus!.delayed:0, HexColor('#E74C3C')),
-        const SizedBox(height: 10),
-        _buildStatRow('En attente',kpiStatus!=null?  kpiStatus!.pending:0, HexColor('#F39C12')),
-        const SizedBox(height: 10),
-        _buildStatRow('Terminées', kpiStatus!=null? kpiStatus!.completed:0, HexColor('#2ECC71')),
-      ],
-    );
-  }
+  Widget _buildBudgetProgress(BuildContext context, BudgetState state) {
+    final l10n = AppLocalizations.of(context)!;
 
-  Widget _buildBudgetProgress(BudgetState state) {
     if (state is BudgetLoading) {
       return SizedBox(
         width: 120,
@@ -181,10 +142,9 @@ class OverviewCardWidget extends StatelessWidget {
     if (state is BudgetDashboardLoaded) {
       final data = state.dashboardData;
       final consumedPercentage = _toDouble(data['consumedPercentage'] ?? 0);
-
       return CircularProgressWidget(
         percentage: consumedPercentage,
-        label: 'Budget\nconsommé',
+        label: l10n.overviewBudgetLabel,
         value: '${consumedPercentage.toStringAsFixed(1)}%',
       );
     }
@@ -199,7 +159,7 @@ class OverviewCardWidget extends StatelessWidget {
             Icon(Icons.error_outline, color: HexColor('#E74C3C'), size: 30),
             const SizedBox(height: 5),
             Text(
-              'Erreur\nbudget',
+              l10n.errorBudget,
               textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 10,
@@ -212,10 +172,9 @@ class OverviewCardWidget extends StatelessWidget {
       );
     }
 
-    // État initial - afficher les données mockées
     return CircularProgressWidget(
       percentage: budgetPercentage,
-      label: 'Budget\nconsommé',
+      label: l10n.overviewBudgetLabel,
     );
   }
 
@@ -243,7 +202,7 @@ class OverviewCardWidget extends StatelessWidget {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w700,
-            color: HexColor('#7F8C8D') ,
+            color: HexColor('#7F8C8D'),
           ),
         ),
       ],

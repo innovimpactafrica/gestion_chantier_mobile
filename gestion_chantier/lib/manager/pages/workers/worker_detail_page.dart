@@ -24,6 +24,7 @@ import 'package:gestion_chantier/ouvrier/repository/worker_repository.dart';
 import 'package:gestion_chantier/ouvrier/services/task_service.dart' as ouv_task;
 import 'package:gestion_chantier/ouvrier/services/worker_service.dart' as ouv_worker;
 import 'package:gestion_chantier/ouvrier/utils/profile_utils.dart';
+import 'package:gestion_chantier/manager/utils/constant.dart';
 import 'package:gestion_chantier/shared/utils/ContactUtils.dart';
 
 class WorkerDetailPage extends StatelessWidget {
@@ -76,7 +77,7 @@ class _WorkerDetailContentState extends State<_WorkerDetailContent> {
   DateTime? _selectedDate;
 
   String _apiDate(DateTime d) =>
-      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      '${d.day.toString().padLeft(2, '0')}-${d.month.toString().padLeft(2, '0')}-${d.year}';
 
   String _displayDate(DateTime d) =>
       '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
@@ -257,7 +258,7 @@ class _WorkerDetailContentState extends State<_WorkerDetailContent> {
               CircleAvatar(
                 radius: 28,
                 backgroundColor: const Color(0xFFDDA0DD),
-                backgroundImage: w.photo != null ? NetworkImage(w.photo!) : null,
+                backgroundImage: w.photo != null ? NetworkImage('${APIConstants.API_BASE_URL_IMG}${w.photo!}') : null,
                 child: w.photo == null
                     ? Text(
                         _getInitials(w),

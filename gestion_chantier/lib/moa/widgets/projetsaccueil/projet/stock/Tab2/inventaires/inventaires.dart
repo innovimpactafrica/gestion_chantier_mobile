@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gestion_chantier/moa/models/RealEstateModel.dart';
 import 'package:gestion_chantier/moa/models/MaterialModel.dart';
 import 'package:gestion_chantier/moa/services/Materiaux_service.dart';
@@ -321,7 +322,7 @@ class _InventairesTabState extends State<InventairesTab> {
   Widget _buildMateriauListTile(Materiau materiau) {
     return _buildListTile(
       context,
-      icon: Icon(materiau.icone, color: HexColor('#777777'), size: 20),
+      icon: SvgPicture.asset(materiau.icone, width: 20, height: 20, colorFilter: ColorFilter.mode(HexColor('#777777'), BlendMode.srcIn)),
       title: materiau.nom,
       subtitle:
           '${materiau.quantiteActuelle} ${materiau.unite} / seuil: ${materiau.seuil} ${materiau.unite}',
@@ -679,7 +680,7 @@ class Materiau {
   final int quantiteActuelle;
   final int seuil;
   final String unite;
-  final IconData icone;
+  final String icone; // chemin SVG
   final StatutMateriau statut;
 
   Materiau({

@@ -21,6 +21,9 @@ import 'package:gestion_chantier/manager/services/TaskService.dart';
 import 'package:gestion_chantier/manager/services/api_service.dart';
 import 'package:gestion_chantier/services/PushNotificationService.dart';
 
+import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
+import 'package:gestion_chantier/shared/bloc/locale_bloc.dart';
 import 'package:intl/date_symbol_data_local.dart';
 import 'bet/utils/HexColor.dart';
 import 'bet/utils/constant.dart';
@@ -49,10 +52,7 @@ Future<void> main() async {
       await _initializeServices();
 
       // Lancement de l'application
-      runApp(
-
-
-          MyApp());
+      runApp(MyApp());
     },
     (error, stack) {
       debugPrint('Erreur non capturée: $error');
@@ -155,11 +155,26 @@ class MyApp extends StatelessWidget {
                 (context) => CommandeBloc(commandeService: CommandeService()),
           ),
         ],
-        child: MaterialApp(
-          title: 'BTP CONNECT',
-          theme: _buildAppTheme(),
-          debugShowCheckedModeBanner: false,
-          home: SplashScreen(),
+        child: BlocProvider(
+          create: (_) => LocaleBloc()..add(LoadLocaleEvent()),
+          child: BlocBuilder<LocaleBloc, LocaleState>(
+            builder: (context, localeState) {
+              return MaterialApp(
+                title: 'BTP Cloud',
+                theme: _buildAppTheme(),
+                debugShowCheckedModeBanner: false,
+                locale: localeState.locale,
+                supportedLocales: const [Locale('fr'), Locale('en')],
+                localizationsDelegates: const [
+                  AppLocalizations.delegate,
+                  GlobalMaterialLocalizations.delegate,
+                  GlobalWidgetsLocalizations.delegate,
+                  GlobalCupertinoLocalizations.delegate,
+                ],
+                home: SplashScreen(),
+              );
+            },
+          ),
         ),
       ),
     );

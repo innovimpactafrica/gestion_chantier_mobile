@@ -7,6 +7,7 @@ import 'package:gestion_chantier/moa/bloc/worker/worker_state.dart';
 import 'package:gestion_chantier/moa/models/RealEstateModel.dart';
 import 'package:gestion_chantier/moa/models/WorkerModel.dart';
 import 'package:gestion_chantier/moa/services/worker_service.dart';
+import 'package:gestion_chantier/moa/utils/constant.dart';
 
 class EquipeTab extends StatelessWidget {
   final RealEstateModel projet;
@@ -165,7 +166,7 @@ class EquipeTab extends StatelessWidget {
               child:
                   worker.photo != null
                       ? Image.network(
-                        worker.photo!,
+                        '${APIConstants.API_BASE_URL_IMG}${worker.photo!}',
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return _buildAvatarFallback(

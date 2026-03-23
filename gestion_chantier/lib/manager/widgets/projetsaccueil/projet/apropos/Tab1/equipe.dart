@@ -9,7 +9,9 @@ import 'package:gestion_chantier/manager/models/WorkerModel.dart';
 import 'package:gestion_chantier/manager/services/worker_service.dart';
 import 'package:gestion_chantier/manager/widgets/rstate/CreateWorkerBottomSheet.dart';
 import 'package:gestion_chantier/manager/pages/workers/worker_detail_page.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/ouvrier/utils/profile_utils.dart';
+import 'package:gestion_chantier/manager/utils/constant.dart';
 import 'package:gestion_chantier/shared/utils/ContactUtils.dart';
 
 class EquipeTab extends StatelessWidget {
@@ -70,7 +72,7 @@ class EquipeTab extends StatelessWidget {
 
                   if (state is WorkerLoaded) {
                     if (state.workers.isEmpty) {
-                      return _buildEmpty();
+                      return _buildEmpty(context);
                     }
 
                     return RefreshIndicator(
@@ -135,27 +137,28 @@ class EquipeTab extends StatelessWidget {
                 RefreshWorkers(propertyId: projet.id),
               );
             },
-            child: const Text('Réessayer'),
+            child: Text(AppLocalizations.of(context)!.teamRetry),
           ),
         ],
       ),
     );
   }
 
-  Widget _buildEmpty() {
-    return const Center(
+  Widget _buildEmpty(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           Icon(Icons.people_outline, size: 64, color: Colors.grey),
           SizedBox(height: 12),
           Text(
-            'Aucun membre d’équipe',
+            l10n.teamEmpty,
             style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
           ),
           SizedBox(height: 6),
           Text(
-            'Aucun worker assigné à ce projet',
+            l10n.teamEmptySubtitle,
             style: TextStyle(color: Colors.grey),
           ),
         ],
@@ -201,7 +204,7 @@ class EquipeTab extends StatelessWidget {
                 radius: 25,
                 backgroundColor: getBgColor(worker.profil),
                 backgroundImage:
-                worker.photo != null ? NetworkImage(worker.photo!) : null,
+                worker.photo != null ? NetworkImage('${APIConstants.API_BASE_URL_IMG}${worker.photo!}') : null,
                 child: worker.photo == null
                     ? Text(
                   _getInitials(worker),

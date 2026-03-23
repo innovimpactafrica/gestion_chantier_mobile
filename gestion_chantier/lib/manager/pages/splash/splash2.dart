@@ -80,7 +80,7 @@ class _SplashScreenState extends State<SplashScreensecond>
                 SizedBox(height: 15),
                 // Texte
                 Text(
-                  'BTP Connect.',
+                  'BTP Cloud.',
                   style: TextStyle(
                     color: Colors.white,
                     fontSize: 24,

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/manager/models/Taskcritical.dart';
 import 'package:gestion_chantier/manager/services/CriticalsTask.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
@@ -101,7 +102,7 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Tâches critiques à échéance',
+                AppLocalizations.of(context)!.criticalTasksTitle,
                 style: TextStyle(
                   fontSize: 19,
                   fontWeight: FontWeight.w700,
@@ -177,7 +178,7 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
               ElevatedButton.icon(
                 onPressed: _loadCriticalTasks,
                 icon: const Icon(Icons.refresh, size: 18),
-                label: const Text('Réessayer'),
+                label: Text(AppLocalizations.of(context)!.criticalTasksRetry),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.blue[600],
                   foregroundColor: Colors.white,
@@ -188,7 +189,7 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
                 OutlinedButton.icon(
                   onPressed: _showConnectionTips,
                   icon: const Icon(Icons.help_outline, size: 18),
-                  label: const Text('Aide'),
+                  label: Text(AppLocalizations.of(context)!.criticalTasksHelp),
                 ),
               ],
             ],
@@ -203,7 +204,7 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
       context: context,
       builder:
           (context) => AlertDialog(
-            title: const Text('Conseils de connexion'),
+            title: Text(AppLocalizations.of(context)!.criticalTasksConnectionTipsTitle),
             content: const Column(
               mainAxisSize: MainAxisSize.min,
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,14 +223,14 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
             actions: [
               TextButton(
                 onPressed: () => Navigator.of(context).pop(),
-                child: const Text('Fermer'),
+                child: Text(AppLocalizations.of(context)!.close),
               ),
               ElevatedButton(
                 onPressed: () {
                   Navigator.of(context).pop();
                   _loadCriticalTasks();
                 },
-                child: const Text('Réessayer'),
+                child: Text(AppLocalizations.of(context)!.criticalTasksRetry),
               ),
             ],
           ),
@@ -244,7 +245,7 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
           Icon(Icons.check_circle_outline, size: 48, color: Colors.green[400]),
           const SizedBox(height: 16),
           Text(
-            'Aucune tâche critique',
+            AppLocalizations.of(context)!.criticalTasksEmpty,
             style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w600,
@@ -252,8 +253,8 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Toutes vos tâches critiques sont à jour !',
+          Text(
+            AppLocalizations.of(context)!.criticalTasksEmptySubtitle,
             style: TextStyle(fontSize: 14, color: Color(0xFF9CA3AF)),
             textAlign: TextAlign.center,
           ),
@@ -307,21 +308,22 @@ class _CriticalTasksWidgetState extends State<CriticalTasksWidget> {
     String badgeLabel;
     Color badgeColor;
     if (task.criticalStatus == TaskStatus.delayed) {
-      badgeLabel = 'En retard';
+      badgeLabel = AppLocalizations.of(context)!.criticalTasksDelayed;
       badgeColor = Color(0xFFEF4444);
     } else if (task.criticalStatus == TaskStatus.urgent) {
-      badgeLabel = 'Urgent';
+      badgeLabel = AppLocalizations.of(context)!.criticalTasksUrgent;
       badgeColor = Color(0xFFF59E42);
     } else {
-      badgeLabel = 'À jour';
+      badgeLabel = AppLocalizations.of(context)!.criticalTasksUpToDate;
       badgeColor = Color(0xFF22C55E);
     }
 
     // Calcul du nombre de jours restants
-    String echeanceText = 'Échéance : ${_formatDate(task.endDate)}';
+    final l10n = AppLocalizations.of(context)!;
+    String echeanceText = '${l10n.criticalTasksDeadline} : ${_formatDate(task.endDate)}';
     int? daysLeft = task.daysRemaining;
     if (daysLeft != null) {
-      echeanceText += ' ($daysLeft j restants)';
+      echeanceText += ' ($daysLeft ${l10n.criticalTasksDaysLeft})';
     }
 
     return Container(

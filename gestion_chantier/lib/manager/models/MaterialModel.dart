@@ -1,4 +1,3 @@
-import 'package:flutter/material.dart';
 import 'package:gestion_chantier/manager/models/PropertyType.dart';
 import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/stock/Tab2/inventaires/inventaires.dart';
 
@@ -147,32 +146,22 @@ class MaterialModel {
       quantiteActuelle: quantity,
       seuil: criticalThreshold,
       unite: unit.code.isEmpty ? 'unité' : unit.code,
-      icone: _getIconForMaterial(label),
+      icone: _getIconPathForMaterial(label),
       statut: statut,
     );
   }
 
-  // Méthode pour obtenir l'icône appropriée selon le type de matériau
-  IconData _getIconForMaterial(String materialName) {
+  // Méthode pour obtenir le chemin SVG selon le type de matériau
+  String _getIconPathForMaterial(String materialName) {
     final name = materialName.toLowerCase();
-    if (name.contains('ciment') || name.contains('cement')) {
-      return Icons.shopping_bag_outlined;
-    } else if (name.contains('fer') ||
-        name.contains('iron') ||
-        name.contains('acier')) {
-      return Icons.bar_chart;
-    } else if (name.contains('beton') || name.contains('concrete')) {
-      return Icons.foundation;
+    if (name.contains('beton') || name.contains('béton') || name.contains('concrete')) {
+      return 'assets/icons/icon.svg';
+    } else if (name.contains('ciment') || name.contains('cement')) {
+      return 'assets/icons/mdi_sack.svg';
     } else if (name.contains('carrelage') || name.contains('tile')) {
-      return Icons.grid_view;
-    } else if (name.contains('bois') || name.contains('wood')) {
-      return Icons.nature;
-    } else if (name.contains('peinture') || name.contains('paint')) {
-      return Icons.brush;
-    } else if (name.contains('tuyau') || name.contains('pipe')) {
-      return Icons.plumbing;
+      return 'assets/icons/mdi_bricks.svg';
     } else {
-      return Icons.inventory_2_outlined;
+      return 'assets/icons/box.svg';
     }
   }
 

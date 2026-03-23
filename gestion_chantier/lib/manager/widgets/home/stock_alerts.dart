@@ -1,6 +1,7 @@
 // widgets/stock_alerts_widget.dart
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/svg.dart';
+import 'package:gestion_chantier/l10n/app_localizations.dart';
 import 'package:gestion_chantier/manager/models/material_kpi.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
 
@@ -16,10 +17,10 @@ class StockAlertsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        // Header
         Container(
           child: Row(
             children: [
@@ -31,11 +32,10 @@ class StockAlertsWidget extends StatelessWidget {
                   color: HexColor('#333333'),
                 ),
               ),
-
               const SizedBox(width: 12),
               Expanded(
                 child: Text(
-                  'Alertes stock matériaux',
+                  l10n.stockAlertsTitle,
                   style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.w600,
@@ -68,31 +68,29 @@ class StockAlertsWidget extends StatelessWidget {
 
         const SizedBox(height: 16),
 
-        // Stock Items - Scroll horizontal
         SizedBox(
           height: 124,
-          child:
-              stockItems.isEmpty
-                  ? _buildEmptyState()
-                  : ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: stockItems.length,
-                    itemBuilder: (context, index) {
-                      return Container(
-                        width: 220,
-                        margin: EdgeInsets.only(
-                          right: index < stockItems.length - 1 ? 16 : 0,
-                        ),
-                        child: _buildStockCard(stockItems[index]),
-                      );
-                    },
-                  ),
+          child: stockItems.isEmpty
+              ? _buildEmptyState(context)
+              : ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: stockItems.length,
+                  itemBuilder: (context, index) {
+                    return Container(
+                      width: 220,
+                      margin: EdgeInsets.only(
+                        right: index < stockItems.length - 1 ? 16 : 0,
+                      ),
+                      child: _buildStockCard(context, stockItems[index]),
+                    );
+                  },
+                ),
         ),
       ],
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildEmptyState(BuildContext context) {
     return Container(
       width: double.infinity,
       height: 124,
@@ -108,7 +106,7 @@ class StockAlertsWidget extends StatelessWidget {
             Icon(Icons.inventory_2_outlined, size: 32, color: Colors.grey[400]),
             const SizedBox(height: 8),
             Text(
-              'Aucune alerte de stock',
+              AppLocalizations.of(context)!.stockNoAlert,
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey[600],
@@ -121,7 +119,8 @@ class StockAlertsWidget extends StatelessWidget {
     );
   }
 
-  Widget _buildStockCard(StockItem item) {
+  Widget _buildStockCard(BuildContext context, StockItem item) {
+    final l10n = AppLocalizations.of(context)!;
     return Container(
       padding: const EdgeInsets.only(left: 13, top: 13, right: 13, bottom: 13),
       decoration: BoxDecoration(
@@ -138,21 +137,16 @@ class StockAlertsWidget extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Row with status and site
           Row(
             children: [
-              // Status badge
               Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 10,
-                  vertical: 4,
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                 decoration: BoxDecoration(
                   color: _getStatusColor(item.status),
                   borderRadius: BorderRadius.circular(4),
                 ),
                 child: Text(
-                  _getStatusText(item.status),
+                  _getStatusText(l10n, item.status),
                   style: const TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
@@ -161,7 +155,6 @@ class StockAlertsWidget extends StatelessWidget {
                 ),
               ),
               const Spacer(),
-              // Site ID
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
                 decoration: BoxDecoration(
@@ -182,7 +175,6 @@ class StockAlertsWidget extends StatelessWidget {
 
           const SizedBox(height: 10),
 
-          // Material name
           Text(
             item.label,
             style: const TextStyle(
@@ -196,7 +188,6 @@ class StockAlertsWidget extends StatelessWidget {
 
           const SizedBox(height: 4),
 
-          // Stock quantity
           RichText(
             text: TextSpan(
               children: [
@@ -208,8 +199,8 @@ class StockAlertsWidget extends StatelessWidget {
                     color: Color(0xFF6B7280),
                   ),
                 ),
-                const TextSpan(
-                  text: ' / seuil: ',
+                TextSpan(
+                  text: ' / ${l10n.stockThreshold}: ',
                   style: TextStyle(
                     fontSize: 13,
                     color: Color(0xFF6B7280),
@@ -235,22 +226,22 @@ class StockAlertsWidget extends StatelessWidget {
   Color _getStatusColor(StockStatus status) {
     switch (status) {
       case StockStatus.critique:
-        return const Color(0xFFEF4444); // Rouge
+        return const Color(0xFFEF4444);
       case StockStatus.faible:
-        return const Color(0xFFF59E0B); // Orange
+        return const Color(0xFFF59E0B);
       case StockStatus.normal:
-        return const Color(0x1F10B981); // Vert
+        return const Color(0x1F10B981);
     }
   }
 
-  String _getStatusText(StockStatus status) {
+  String _getStatusText(AppLocalizations l10n, StockStatus status) {
     switch (status) {
       case StockStatus.critique:
-        return 'Critique';
+        return l10n.stockStatusCritique;
       case StockStatus.faible:
-        return 'Faible';
+        return l10n.stockStatusFaible;
       case StockStatus.normal:
-        return 'Normal';
+        return l10n.stockStatusNormal;
     }
   }
 }

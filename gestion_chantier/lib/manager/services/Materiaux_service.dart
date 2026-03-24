@@ -111,38 +111,25 @@ class MaterialsApiService {
   /// Ajoute un nouveau matériau
   Future<MaterialModel> addMaterial(MaterialModel material) async {
     try {
-      // Ne pas inclure l'ID dans la requête POST
       final materialData = material.toJson();
-      materialData.remove('id'); // Supprimer l'ID pour la création
+      materialData.remove('id');
 
-      final response = await _apiService.dio.post(
-        '/materials',
-        data: materialData,
-      );
+      final response = await _apiService.dio.post('/materials', data: materialData);
 
       if (response.statusCode == 201 || response.statusCode == 200) {
-        final createdMaterial = MaterialModel.fromJson(response.data);
-        return createdMaterial;
+        return MaterialModel.fromJson(response.data);
       } else {
-        throw Exception(
-          'Erreur lors de l\'ajout du matériau: ${response.statusCode}',
-        );
+        throw Exception('Erreur lors de l\'ajout du matériau: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        print('Response: ${e.response?.data}');
-      }
-      throw Exception('Erreur réseau lors de l\'ajout: ${e.message}');
+      throw Exception(_extractApiMessage(e, 'l\'ajout du matériau'));
     } catch (e) {
-      throw Exception('Erreur inattendue lors de l\'ajout: $e');
+      rethrow;
     }
   }
 
   /// Met à jour un matériau existant
-  Future<MaterialModel> updateMaterial(
-    int materialId,
-    MaterialModel material,
-  ) async {
+  Future<MaterialModel> updateMaterial(int materialId, MaterialModel material) async {
     try {
       final response = await _apiService.dio.put(
         '/materials/$materialId',
@@ -150,20 +137,14 @@ class MaterialsApiService {
       );
 
       if (response.statusCode == 200) {
-        final updatedMaterial = MaterialModel.fromJson(response.data);
-        return updatedMaterial;
+        return MaterialModel.fromJson(response.data);
       } else {
-        throw Exception(
-          'Erreur lors de la mise à jour du matériau: ${response.statusCode}',
-        );
+        throw Exception('Erreur lors de la mise à jour: ${response.statusCode}');
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        print('Response: ${e.response?.data}');
-      }
-      throw Exception('Erreur réseau lors de la mise à jour: ${e.message}');
+      throw Exception(_extractApiMessage(e, 'la mise à jour du matériau'));
     } catch (e) {
-      throw Exception('Erreur inattendue lors de la mise à jour: $e');
+      rethrow;
     }
   }
 
@@ -236,10 +217,20 @@ class MaterialsApiService {
     } on DioException catch (e) {
       print('❌ MaterialsApiService: Status Code: ${e.response?.statusCode}');
       print('❌ MaterialsApiService: Response Data: ${e.response?.data}');
-      rethrow;
+      throw Exception(_extractApiMessage(e, 'l\'ajout du matériau'));
     } catch (e) {
-      throw Exception('Erreur inattendue lors de l\'ajout du matériau: $e');
+      rethrow;
     }
+  }
+
+  /// Extrait le message d'erreur métier depuis la réponse API
+  String _extractApiMessage(DioException e, String operation) {
+    final data = e.response?.data;
+    if (data is Map<String, dynamic>) {
+      final msg = data['message'] as String?;
+      if (msg != null && msg.isNotEmpty) return msg;
+    }
+    return 'Erreur réseau lors de $operation: ${e.message}';
   }
 
   /// Récupère toutes les unités disponibles

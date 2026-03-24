@@ -304,4 +304,106 @@ class CommandeService {
     final data = response.data['content'] as List;
     return data.map((e) => DeliveryModel.fromJson(e)).toList();
   }
+
+  /// Met à jour une commande existante
+  Future<CommandeModel> updateOrder({
+    required int orderId,
+    required int supplierId,
+    required DateTime deliveryDate,
+    required List<Map<String, dynamic>> items,
+  }) async {
+    try {
+      final response = await _apiService.dio.put(
+        '/orders/$orderId',
+        data: {
+          'supplierId': supplierId,
+          'deliveryDate': [
+            deliveryDate.year, deliveryDate.month, deliveryDate.day,
+            deliveryDate.hour, deliveryDate.minute, deliveryDate.second,
+          ],
+          'materials': items,
+        },
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return _parseCommandeResponse(response.data);
+      }
+      throw Exception('Erreur HTTP ${response.statusCode}');
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    }
+  }
+
+  /// Met à jour le statut d'une livraison
+  Future<void> updateDeliveryStatus(int deliveryId, String status) async {
+    try {
+      // Essai 1 : PUT /orders/{id}/status avec body JSON
+      final response = await _apiService.dio.put(
+        '/orders/$deliveryId/status',
+        data: {'status': status},
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Erreur HTTP ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      if (e.response?.statusCode == 404 || e.response?.statusCode == 405 || e.response?.statusCode == 500) {
+        // Essai 2 : PUT /orders/{id} avec juste le statut
+        try {
+          final response = await _apiService.dio.put(
+            '/orders/$deliveryId',
+            data: {'status': status},
+            options: Options(headers: {'Content-Type': 'application/json'}),
+          );
+          if (response.statusCode != 200 && response.statusCode != 204) {
+            throw Exception('Erreur HTTP ${response.statusCode}');
+          }
+          return;
+        } on DioException catch (e2) {
+          throw Exception(_handleDioError(e2));
+        }
+      }
+      throw Exception(_handleDioError(e));
+    }
+  }
+
+  /// Supprime une commande
+  Future<void> deleteOrder(int orderId) async {
+    try {
+      final response = await _apiService.dio.delete('/orders/$orderId');
+      if (response.statusCode != 200 && response.statusCode != 204) {
+        throw Exception('Erreur HTTP ${response.statusCode}');
+      }
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    }
+  }
+
+  /// Duplique une commande (recrée avec les mêmes items/fournisseur)
+  Future<CommandeModel> duplicateOrder(CommandeModel commande) async {
+    try {
+      final requestData = {
+        'supplierId': commande.supplier.id,
+        'propertyId': commande.property.id,
+        'materials': commande.items
+            .map((item) => {
+                  'materialId': item.materialId,
+                  'quantity': item.quantity,
+                  'unitPrice': item.unitPrice,
+                })
+            .toList(),
+      };
+      final response = await _apiService.dio.post(
+        '/orders',
+        data: requestData,
+        options: Options(headers: {'Content-Type': 'application/json'}),
+      );
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        return _parseCommandeResponse(response.data);
+      }
+      throw Exception('Erreur HTTP ${response.statusCode}');
+    } on DioException catch (e) {
+      throw Exception(_handleDioError(e));
+    }
+  }
 }

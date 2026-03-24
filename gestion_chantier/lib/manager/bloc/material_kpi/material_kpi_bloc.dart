@@ -10,7 +10,11 @@ class MaterialKpiBloc extends Bloc<MaterialKpiEvent, MaterialKpiState> {
     on<FetchMaterialUnitDistribution>((event, emit) async {
       emit(MaterialKpiLoading());
       try {
-        final data = await repository.fetchUnitDistribution(event.propertyId);
+        final data = await repository.fetchUnitDistribution(
+          event.propertyId,
+          startDate: event.startDate,
+          endDate: event.endDate,
+        );
         emit(MaterialKpiLoaded(data));
       } catch (e) {
         emit(MaterialKpiError(e.toString()));

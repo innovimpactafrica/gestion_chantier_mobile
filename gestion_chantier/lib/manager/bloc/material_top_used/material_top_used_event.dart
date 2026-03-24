@@ -7,8 +7,10 @@ abstract class MaterialTopUsedEvent extends Equatable {
 
 class FetchMaterialTopUsed extends MaterialTopUsedEvent {
   final int propertyId;
-  FetchMaterialTopUsed(this.propertyId);
+  final DateTime? startDate;
+  final DateTime? endDate;
+  FetchMaterialTopUsed(this.propertyId, {this.startDate, this.endDate});
 
   @override
-  List<Object?> get props => [propertyId];
+  List<Object?> get props => [propertyId, startDate, endDate];
 }

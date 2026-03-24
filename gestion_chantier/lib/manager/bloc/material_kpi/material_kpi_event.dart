@@ -7,8 +7,10 @@ abstract class MaterialKpiEvent extends Equatable {
 
 class FetchMaterialUnitDistribution extends MaterialKpiEvent {
   final int propertyId;
-  FetchMaterialUnitDistribution(this.propertyId);
+  final DateTime? startDate;
+  final DateTime? endDate;
+  FetchMaterialUnitDistribution(this.propertyId, {this.startDate, this.endDate});
 
   @override
-  List<Object?> get props => [propertyId];
+  List<Object?> get props => [propertyId, startDate, endDate];
 }

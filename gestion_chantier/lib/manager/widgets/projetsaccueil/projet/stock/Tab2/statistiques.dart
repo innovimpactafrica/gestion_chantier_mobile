@@ -28,13 +28,48 @@ class StatistiquesTab extends StatefulWidget {
 }
 
 class _StatistiquesTabState extends State<StatistiquesTab> {
+  String _selectedPeriod = 'Ce mois-ci';
+
+  static const _periods = [
+    'Ce mois-ci',
+    '3 derniers mois',
+    '6 derniers mois',
+    'Cette année',
+  ];
+
+  DateTimeRange _getDateRange() {
+    final now = DateTime.now();
+    switch (_selectedPeriod) {
+      case '3 derniers mois':
+        return DateTimeRange(
+          start: DateTime(now.year, now.month - 2, 1),
+          end: now,
+        );
+      case '6 derniers mois':
+        return DateTimeRange(
+          start: DateTime(now.year, now.month - 5, 1),
+          end: now,
+        );
+      case 'Cette année':
+        return DateTimeRange(
+          start: DateTime(now.year, 1, 1),
+          end: now,
+        );
+      default: // Ce mois-ci
+        return DateTimeRange(
+          start: DateTime(now.year, now.month, 1),
+          end: now,
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final range = _getDateRange();
     return BlocProvider(
-      create:
-          (_) =>
-              MaterialKpiBloc(MaterialKpiRepository())
-                ..add(FetchMaterialUnitDistribution(widget.projet.id)),
+      create: (_) => MaterialKpiBloc(MaterialKpiRepository())
+        ..add(FetchMaterialUnitDistribution(widget.projet.id,
+            startDate: range.start, endDate: range.end)),
       child: BlocBuilder<MaterialKpiBloc, MaterialKpiState>(
         builder: (context, state) {
           Map<String, double> dataMap = {};
@@ -101,21 +136,34 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                                   borderRadius: BorderRadius.circular(12),
                                   color: Colors.white,
                                 ),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      'Ce mois-ci',
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.w500,
-                                        color: Color(0xFF232323),
-                                      ),
-                                    ),
-                                    Icon(
-                                      Icons.arrow_drop_down,
+                                child: DropdownButtonHideUnderline(
+                                  child: DropdownButton<String>(
+                                    value: _selectedPeriod,
+                                    isDense: true,
+                                    style: const TextStyle(
+                                      fontWeight: FontWeight.w500,
                                       color: Color(0xFF232323),
+                                      fontSize: 14,
                                     ),
-                                  ],
+                                    icon: const Icon(Icons.arrow_drop_down,
+                                        color: Color(0xFF232323)),
+                                    items: _periods.map((p) =>
+                                      DropdownMenuItem(value: p, child: Text(p))
+                                    ).toList(),
+                                    onChanged: (val) {
+                                      if (val != null && val != _selectedPeriod) {
+                                        setState(() => _selectedPeriod = val);
+                                        final r = _getDateRange();
+                                        context.read<MaterialKpiBloc>().add(
+                                          FetchMaterialUnitDistribution(
+                                            widget.projet.id,
+                                            startDate: r.start,
+                                            endDate: r.end,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                  ),
                                 ),
                               ),
                             ],
@@ -213,10 +261,9 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                     ),
                   SizedBox(height: 32),
                   BlocProvider(
-                    create:
-                        (_) =>
-                            MaterialTopUsedBloc(MaterialTopUsedRepository())
-                              ..add(FetchMaterialTopUsed(widget.projet.id)),
+                    create: (_) => MaterialTopUsedBloc(MaterialTopUsedRepository())
+                              ..add(FetchMaterialTopUsed(widget.projet.id,
+                                  startDate: range.start, endDate: range.end)),
                     child: BlocBuilder<
                       MaterialTopUsedBloc,
                       MaterialTopUsedState
@@ -269,7 +316,12 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                           materials
                               .map((e) => e.totalUsedQuantity)
                               .reduce((a, b) => a > b ? a : b);
-                          final maxY = 350.0;
+                          final maxVal = materials
+                              .map((e) => e.totalUsedQuantity)
+                              .reduce((a, b) => a > b ? a : b);
+                          final maxY = ((maxVal / 50).ceil() * 50)
+                              .clamp(50, double.infinity)
+                              .toDouble();
                           return Container(
                             padding: EdgeInsets.all(24),
                             decoration: BoxDecoration(
@@ -532,12 +584,10 @@ class _StatistiquesTabState extends State<StatistiquesTab> {
                         SizedBox(
                           height: 220,
                           child: BlocProvider(
-                            create:
-                                (_) => MaterialMonthlyStatsBloc(
+                            create: (_) => MaterialMonthlyStatsBloc(
                                   MaterialMonthlyStatsRepository(),
-                                )..add(
-                                  FetchMaterialMonthlyStats(widget.projet.id),
-                                ),
+                                )..add(FetchMaterialMonthlyStats(widget.projet.id,
+                                    startDate: range.start, endDate: range.end)),
                             child: BlocBuilder<
                               MaterialMonthlyStatsBloc,
                               MaterialMonthlyStatsState

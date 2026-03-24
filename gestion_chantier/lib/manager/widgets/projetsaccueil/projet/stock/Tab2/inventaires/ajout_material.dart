@@ -1,4 +1,3 @@
-import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:gestion_chantier/manager/models/RealEstateModel.dart';
 import 'package:gestion_chantier/manager/models/MaterialModel.dart';
@@ -53,7 +52,7 @@ class _AjouterMateriauScreenState extends State<AjouterMateriauScreen> {
     }
   }
 
-  void _onSubmit() async {
+  Future<void> _onSubmit() async {
     if (!_formKey.currentState!.validate()) return;
     if (_selectedUnit == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -79,15 +78,9 @@ class _AjouterMateriauScreenState extends State<AjouterMateriauScreen> {
       }
     } catch (e) {
       if (mounted) {
-        String message = 'Erreur lors de l\'ajout du matériau';
-        if (e is DioException && e.response?.data is Map) {
-          message = e.response!.data['message'] ?? message;
-        }
+        final message = e.toString().replaceFirst('Exception: ', '');
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(message),
-            backgroundColor: Colors.red,
-          ),
+          SnackBar(content: Text(message), backgroundColor: Colors.red),
         );
       }
     } finally {

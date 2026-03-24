@@ -12,6 +12,8 @@ class MaterialTopUsedBloc
       try {
         final materials = await repository.fetchTopUsedMaterials(
           event.propertyId,
+          startDate: event.startDate,
+          endDate: event.endDate,
         );
         emit(MaterialTopUsedLoaded(materials));
       } catch (e) {

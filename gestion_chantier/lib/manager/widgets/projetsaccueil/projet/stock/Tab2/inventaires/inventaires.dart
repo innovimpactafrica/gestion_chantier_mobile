@@ -13,6 +13,9 @@ import 'package:intl/intl.dart';
 import 'ajout_material.dart';
 import 'detail_material.dart';
 
+// Map pour retrouver le MaterialModel original depuis son id
+final Map<int, MaterialModel> _materialModelCache = {};
+
 class InventairesTab extends StatefulWidget {
   final RealEstateModel projet;
   const InventairesTab({super.key, required this.projet});
@@ -55,13 +58,15 @@ class _InventairesTabState extends State<InventairesTab> {
 
   Future<void> _loadMateriaux() async {
     try {
-      // Ligne de debug à ajouter temporairement
       await _materialsApiService.debugApiResponse(widget.projet.id);
 
       final List<MaterialModel> materialsFromApi = await _materialsApiService
           .getMaterialsByProperty(widget.projet.id);
 
       setState(() {
+        for (final m in materialsFromApi) {
+          _materialModelCache[m.id] = m;
+        }
         materiaux =
             materialsFromApi.map((material) => material.toMateriau()).toList();
       });
@@ -642,51 +647,24 @@ class _InventairesTabState extends State<InventairesTab> {
   }
 
   void _ouvrirDetailsMateriau(Materiau materiau) {
+    final materialModel = _materialModelCache[materiau.id];
     showModalBottomSheet(
       context: context,
       isDismissible: true,
-      isScrollControlled: true, // nécessaire pour utiliser fractionallySizedBox
+      isScrollControlled: true,
       backgroundColor: Colors.transparent,
       builder: (context) {
         return DraggableScrollableSheet(
-          initialChildSize: 0.6, // Hauteur initiale (60% de l'écran)
-          minChildSize: 0.4,     // Hauteur minimale lors du drag
-          maxChildSize: 0.9,     // Hauteur maximale lors du drag
+          initialChildSize: 0.75,
+          minChildSize: 0.5,
+          maxChildSize: 0.95,
           builder: (context, scrollController) {
-            return Container(
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-              ),
-              child: Column(
-                children: [
-                  // Petit indicateur pour montrer que c'est draggable
-                  Container(
-                    width: 40,
-                    height: 5,
-                    margin: const EdgeInsets.symmetric(vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
-                    ),
-                  ),
-                  // Bouton fermer
-                  Align(
-                    alignment: Alignment.topRight,
-                    child: IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ),
-                  // Contenu scrollable
-                  Expanded(
-                    child: DetailsMateriauScreen(
-                      materiau: materiau,
-                      projet: widget.projet,
-                    ),
-                  ),
-                ],
-              ),
+            return DetailsMateriauSheet(
+              materiau: materiau,
+              materialModel: materialModel,
+              projet: widget.projet,
+              scrollController: scrollController,
+              onRefresh: _refreshData,
             );
           },
         );

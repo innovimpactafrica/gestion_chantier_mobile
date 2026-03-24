@@ -12,7 +12,11 @@ class MaterialMonthlyStatsBloc
     on<FetchMaterialMonthlyStats>((event, emit) async {
       emit(MaterialMonthlyStatsLoading());
       try {
-        final stats = await repository.fetchMonthlyStats(event.propertyId);
+        final stats = await repository.fetchMonthlyStats(
+          event.propertyId,
+          startDate: event.startDate,
+          endDate: event.endDate,
+        );
         emit(MaterialMonthlyStatsLoaded(stats));
       } catch (e) {
         emit(MaterialMonthlyStatsError(e.toString()));

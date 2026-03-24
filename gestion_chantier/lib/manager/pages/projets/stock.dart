@@ -33,16 +33,19 @@ class _StockPageState extends State<StockPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        CustomProjectAppBar(
-          title: widget.projet.name,
-          onBackPressed:
-              widget.onBackPressed ?? () => Navigator.of(context).pop(),
-        ),
-        _buildTabBar(),
-        Expanded(child: _buildTabContent()),
-      ],
+    return BlocProvider(
+      create: (_) => DeliveryBloc(DeliveryRepository()),
+      child: Column(
+        children: [
+          CustomProjectAppBar(
+            title: widget.projet.name,
+            onBackPressed:
+                widget.onBackPressed ?? () => Navigator.of(context).pop(),
+          ),
+          _buildTabBar(),
+          Expanded(child: _buildTabContent()),
+        ],
+      ),
     );
   }
 
@@ -109,10 +112,7 @@ class _StockPageState extends State<StockPage> {
       case 1:
         return CommandesTab(projet: widget.projet);
       case 2:
-        return BlocProvider(
-          create: (_) => DeliveryBloc(DeliveryRepository()),
-          child: LivraisonsTab(projet: widget.projet),
-        );
+        return LivraisonsTab(projet: widget.projet);
       case 3:
         return StatistiquesTab(projet: widget.projet);
       default:

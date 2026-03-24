@@ -84,3 +84,29 @@ class CommandeEmpty extends CommandeState {
   @override
   List<Object?> get props => [propertyId];
 }
+
+/// État après suppression
+class CommandeDeleted extends CommandeState {
+  final List<CommandeModel> allCommandes;
+  const CommandeDeleted({required this.allCommandes});
+  @override
+  List<Object?> get props => [allCommandes];
+}
+
+/// État après duplication
+class CommandeDuplicated extends CommandeState {
+  final CommandeModel newCommande;
+  final List<CommandeModel> allCommandes;
+  const CommandeDuplicated({required this.newCommande, required this.allCommandes});
+  @override
+  List<Object?> get props => [newCommande, allCommandes];
+}
+
+/// État après modification
+class CommandeUpdated extends CommandeState {
+  final CommandeModel updatedCommande;
+  final List<CommandeModel> allCommandes;
+  const CommandeUpdated({required this.updatedCommande, required this.allCommandes});
+  @override
+  List<Object?> get props => [updatedCommande, allCommandes];
+}

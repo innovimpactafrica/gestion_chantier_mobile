@@ -139,11 +139,15 @@ class MaterialsService {
 
   /// Récupère la distribution des matériaux par unité pour une propriété
   Future<Map<String, double>> getUnitDistributionByProperty(
-    int propertyId,
+    int propertyId, {DateTime? startDate, DateTime? endDate}
   ) async {
     try {
+      final params = <String, dynamic>{};
+      if (startDate != null) params['startDate'] = startDate.toIso8601String().substring(0, 10);
+      if (endDate != null) params['endDate'] = endDate.toIso8601String().substring(0, 10);
       final response = await _apiService.dio.get(
         '/materials/kpis/unit-distribution/property/$propertyId',
+        queryParameters: params.isNotEmpty ? params : null,
       );
       if (response.statusCode == 200 && response.data is Map<String, dynamic>) {
         return (response.data as Map<String, dynamic>).map(
@@ -162,11 +166,14 @@ class MaterialsService {
   }
 
   /// Récupère les stats mensuelles d'entrées/sorties de matériaux pour une propriété
-  Future<List<MaterialMonthlyStat>> getMonthlyStats(int propertyId) async {
+  Future<List<MaterialMonthlyStat>> getMonthlyStats(int propertyId, {DateTime? startDate, DateTime? endDate}) async {
     try {
+      final params = <String, dynamic>{'propertyId': propertyId};
+      if (startDate != null) params['startDate'] = startDate.toIso8601String().substring(0, 10);
+      if (endDate != null) params['endDate'] = endDate.toIso8601String().substring(0, 10);
       final response = await _apiService.dio.get(
         '/materials/monthly-stats',
-        queryParameters: {'propertyId': propertyId},
+        queryParameters: params,
       );
       if (response.statusCode == 200 && response.data is List) {
         return (response.data as List)
@@ -186,11 +193,14 @@ class MaterialsService {
   }
 
   Future<List<MaterialTopUsedModel>> fetchTopUsedMaterials(
-    int propertyId,
+    int propertyId, {DateTime? startDate, DateTime? endDate}
   ) async {
+    final params = <String, dynamic>{'propertyId': propertyId};
+    if (startDate != null) params['startDate'] = startDate.toIso8601String().substring(0, 10);
+    if (endDate != null) params['endDate'] = endDate.toIso8601String().substring(0, 10);
     final response = await _apiService.dio.get(
       '/materials/kpi/top-used',
-      queryParameters: {'propertyId': propertyId},
+      queryParameters: params,
     );
     final data = response.data as List;
     return data.map((e) => MaterialTopUsedModel.fromJson(e)).toList();

@@ -16,6 +16,9 @@ class CommandeBloc extends Bloc<CommandeEvent, CommandeState> {
     on<AddOrderEvent>(_onAddOrder);
     on<RefreshOrdersEvent>(_onRefreshOrders);
     on<ResetCommandeStateEvent>(_onResetCommandeState);
+    on<DeleteOrderEvent>(_onDeleteOrder);
+    on<DuplicateOrderEvent>(_onDuplicateOrder);
+    on<UpdateOrderEvent>(_onUpdateOrder);
   }
 
   /// Handler pour récupérer les commandes en attente
@@ -129,6 +132,70 @@ class CommandeBloc extends Bloc<CommandeEvent, CommandeState> {
     Emitter<CommandeState> emit,
   ) async {
     emit(const CommandeInitial());
+  }
+
+  /// Handler pour supprimer une commande
+  Future<void> _onDeleteOrder(
+    DeleteOrderEvent event,
+    Emitter<CommandeState> emit,
+  ) async {
+    final current = getCurrentCommandes();
+    try {
+      await _commandeService.deleteOrder(event.orderId);
+      final updated = current.where((c) => c.id != event.orderId).toList();
+      if (updated.isEmpty) {
+        emit(CommandeEmpty(propertyId: event.propertyId));
+      } else {
+        emit(CommandeDeleted(allCommandes: updated));
+      }
+    } catch (e) {
+      emit(CommandeError(message: e.toString(), errorType: 'DELETE_ERROR'));
+      await Future.delayed(const Duration(seconds: 2));
+      if (current.isNotEmpty) {
+        emit(CommandeLoaded(commandes: current, propertyId: event.propertyId));
+      }
+    }
+  }
+
+  /// Handler pour modifier une commande
+  Future<void> _onUpdateOrder(
+    UpdateOrderEvent event,
+    Emitter<CommandeState> emit,
+  ) async {
+    final current = getCurrentCommandes();
+    try {
+      final updated = await _commandeService.updateOrder(
+        orderId: event.orderId,
+        supplierId: event.supplierId,
+        deliveryDate: event.deliveryDate,
+        items: event.items,
+      );
+      final updatedList = current
+          .map((c) => c.id == event.orderId ? updated : c)
+          .toList();
+      emit(CommandeUpdated(
+          updatedCommande: updated, allCommandes: updatedList));
+    } catch (e) {
+      emit(CommandeError(message: e.toString(), errorType: 'UPDATE_ERROR'));
+      await Future.delayed(const Duration(seconds: 2));
+      emit(CommandeLoaded(commandes: current, propertyId: event.propertyId));
+    }
+  }
+  /// Handler pour dupliquer une commande
+  Future<void> _onDuplicateOrder(
+    DuplicateOrderEvent event,
+    Emitter<CommandeState> emit,
+  ) async {
+    final current = getCurrentCommandes();
+    try {
+      final newCmd = await _commandeService.duplicateOrder(event.commande);
+      final updated = [...current, newCmd];
+      emit(CommandeDuplicated(newCommande: newCmd, allCommandes: updated));
+    } catch (e) {
+      emit(CommandeError(message: e.toString(), errorType: 'DUPLICATE_ERROR'));
+      await Future.delayed(const Duration(seconds: 2));
+      emit(CommandeLoaded(commandes: current, propertyId: event.propertyId));
+    }
   }
 
   /// Méthode utilitaire pour obtenir les commandes actuelles

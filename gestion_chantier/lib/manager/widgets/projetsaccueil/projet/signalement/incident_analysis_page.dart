@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:gestion_chantier/manager/models/IncidentAnalysisModel.dart';
 import 'package:gestion_chantier/manager/models/IncidentModel.dart';
 import 'package:gestion_chantier/manager/services/IncidentService.dart';
 import 'package:gestion_chantier/manager/utils/HexColor.dart';
+import 'package:gestion_chantier/shared/bloc/locale_bloc.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
@@ -63,6 +65,13 @@ class _IncidentAnalysisPageState extends State<IncidentAnalysisPage> {
     _loadAnalysis();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final locale = context.read<LocaleBloc>().state.locale.languageCode;
+    if (_lang != locale) setState(() => _lang = locale);
+  }
+
   Future<void> _loadAnalysis() async {
     setState(() { _isLoading = true; _error = null; });
     try {
@@ -95,83 +104,87 @@ class _IncidentAnalysisPageState extends State<IncidentAnalysisPage> {
   Widget build(BuildContext context) {
     final primaryColor = HexColor('#1A365D');
 
-    return Scaffold(
-      backgroundColor: HexColor('#F5F7FA'),
-      body: Column(
-        children: [
-          // ─── Header ───────────────────────────────────────────────────────
-          Container(
-            padding: EdgeInsets.only(
-              top: MediaQuery.of(context).padding.top + 10,
-              left: 16,
-              right: 16,
-              bottom: 16,
-            ),
-            decoration: BoxDecoration(
-              color: primaryColor,
-              borderRadius: const BorderRadius.only(
-                bottomLeft: Radius.circular(20),
-                bottomRight: Radius.circular(20),
+    return BlocListener<LocaleBloc, LocaleState>(
+      listener: (context, state) {
+        setState(() => _lang = state.locale.languageCode);
+      },
+      child: Scaffold(
+        backgroundColor: HexColor('#F5F7FA'),
+        body: Column(
+          children: [
+            // ─── Header ─────────────────────────────────────────────────
+            Container(
+              padding: EdgeInsets.only(
+                top: MediaQuery.of(context).padding.top + 10,
+                left: 16,
+                right: 16,
+                bottom: 16,
+              ),
+              decoration: BoxDecoration(
+                color: primaryColor,
+                borderRadius: const BorderRadius.only(
+                  bottomLeft: Radius.circular(20),
+                  bottomRight: Radius.circular(20),
+                ),
+              ),
+              child: Row(
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                         'Analyse d\'incident générée par IA',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 15,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          widget.incident.title,
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.8),
+                            fontSize: 13,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_analysis != null)
+                    Padding(
+                      padding: const EdgeInsets.all(8),
+                      child: SvgPicture.asset(
+                        'assets/icons/FreeSample-Vectorizer-io-microchip.svg',
+                        width: 24,
+                        height: 24,
+                        colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
+                      ),
+                    ),
+                ],
               ),
             ),
-            child: Row(
-              children: [
-                IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white, size: 24),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Analyse d\'incident',
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        widget.incident.title,
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.8),
-                          fontSize: 13,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ],
-                  ),
-                ),
-                if (_analysis != null)
-                  IconButton(
-                    icon: SvgPicture.asset(
-                      'assets/icons/doc.svg',
-                      width: 24,
-                      height: 24,
-                      colorFilter: const ColorFilter.mode(Colors.white, BlendMode.srcIn),
-                    ),
-                    onPressed: () => _exportPdf(_analysis!),
-                    tooltip: 'Exporter PDF',
-                  ),
-              ],
-            ),
-          ),
 
-          // ─── Contenu ──────────────────────────────────────────────────────
-          Expanded(
-            child: _isLoading
-                ? Center(child: CircularProgressIndicator(color: primaryColor))
-                : _error != null
-                    ? _buildError()
-                    : _analysis == null
-                        ? _buildNoRapport()
-                        : _buildContent(_analysis!),
-          ),
-        ],
+            // ─── Contenu ─────────────────────────────────────────────────
+            Expanded(
+              child: _isLoading
+                  ? Center(child: CircularProgressIndicator(color: primaryColor))
+                  : _error != null
+                      ? _buildError()
+                      : _analysis == null
+                          ? _buildNoRapport()
+                          : _buildContent(_analysis!),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -258,7 +271,7 @@ class _IncidentAnalysisPageState extends State<IncidentAnalysisPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // ─── Carte infos générales ─────────────────────────────────────
+          // ─── Carte infos générales ───────────────────────────────────
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -289,46 +302,21 @@ class _IncidentAnalysisPageState extends State<IncidentAnalysisPage> {
                     SvgPicture.asset('assets/icons/alert.svg', width: 16, height: 16,
                         colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn)),
                     const SizedBox(width: 6),
-                    Text(
-                      analysis.incidentType,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                    ),
+                    Text(analysis.incidentType, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
                     const SizedBox(width: 16),
                     SvgPicture.asset('assets/icons/calendar.svg', width: 16, height: 16,
                         colorFilter: ColorFilter.mode(Colors.grey[600]!, BlendMode.srcIn)),
                     const SizedBox(width: 6),
-                    Text(
-                      analysis.formattedDate,
-                      style: TextStyle(fontSize: 13, color: Colors.grey[700]),
-                    ),
+                    Text(analysis.formattedDate, style: TextStyle(fontSize: 13, color: Colors.grey[700])),
                   ],
                 ),
               ],
             ),
           ),
 
-          const SizedBox(height: 12),
-
-          // ─── Sélecteur de langue ───────────────────────────────────────
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(10),
-              boxShadow: [
-                BoxShadow(color: Colors.black.withOpacity(0.04), blurRadius: 6, offset: const Offset(0, 2)),
-              ],
-            ),
-            child: Row(
-              children: [
-                _LangTab(label: 'Français', value: 'fr', selected: _lang == 'fr', onTap: () => setState(() => _lang = 'fr')),
-                _LangTab(label: 'English', value: 'en', selected: _lang == 'en', onTap: () => setState(() => _lang = 'en')),
-              ],
-            ),
-          ),
-
           const SizedBox(height: 16),
 
-          // ─── Section Explication ───────────────────────────────────────
+          // ─── Section Explication ─────────────────────────────────────
           _IncidentHtmlSection(
             title: _lang == 'fr' ? 'EXPLICATION' : 'EXPLANATION',
             htmlContent: analysis.explanation[_lang] ?? '',
@@ -336,7 +324,7 @@ class _IncidentAnalysisPageState extends State<IncidentAnalysisPage> {
             icon: Icons.info_outline,
           ),
 
-          // ─── Section Recommandations ───────────────────────────────────
+          // ─── Section Recommandations ─────────────────────────────────
           _IncidentHtmlSection(
             title: _lang == 'fr' ? 'RECOMMANDATIONS' : 'RECOMMENDATIONS',
             htmlContent: analysis.recommendation[_lang] ?? '',
@@ -346,7 +334,7 @@ class _IncidentAnalysisPageState extends State<IncidentAnalysisPage> {
 
           const SizedBox(height: 8),
 
-          // ─── Bouton Export PDF ─────────────────────────────────────────
+          // ─── Bouton Export PDF ───────────────────────────────────────
           SizedBox(
             width: double.infinity,
             child: ElevatedButton.icon(
@@ -577,8 +565,7 @@ class _IncidentHtmlSection extends StatelessWidget {
               children: [
                 Icon(icon, color: accentColor, size: 18),
                 const SizedBox(width: 8),
-                Text(title,
-                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: accentColor)),
+                Text(title, style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: accentColor)),
               ],
             ),
           ),
@@ -630,41 +617,6 @@ class _SeverityBadge extends StatelessWidget {
           Text(severityLabel(severity),
               style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: color)),
         ],
-      ),
-    );
-  }
-}
-
-// ─── Onglet langue ────────────────────────────────────────────────────────────
-class _LangTab extends StatelessWidget {
-  final String label;
-  final String value;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _LangTab({required this.label, required this.value, required this.selected, required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: GestureDetector(
-        onTap: onTap,
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 10),
-          decoration: BoxDecoration(
-            color: selected ? HexColor('#1A365D') : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
-          ),
-          child: Text(
-            label,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: selected ? Colors.white : Colors.grey[600],
-            ),
-          ),
-        ),
       ),
     );
   }

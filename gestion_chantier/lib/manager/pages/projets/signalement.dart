@@ -67,17 +67,21 @@ class SignalementsPage extends StatelessWidget {
           Expanded(child: IncidentsListWidget(propertyId: projet?.id ?? 0)),
         ],
       ),
-      floatingActionButton: Builder(
+      floatingActionButton: projet?.id == null
+          ? null
+          : Builder(
         builder:
             (fabContext) => CustomFloatingButton(
               imagePath: 'assets/icons/plus.svg',
               onPressed: () async {
-                await AddSignalementModal.show(
+                final result = await AddSignalementModal.show(
                   fabContext,
-                  propertyId: projet?.id ?? 0,
+                  propertyId: projet!.id,
                 );
-                final bloc = BlocProvider.of<IncidentsBloc>(fabContext);
-                bloc.add(RefreshIncidentsEvent(propertyId: projet?.id ?? 0));
+                if (result == true) {
+                  BlocProvider.of<IncidentsBloc>(fabContext)
+                      .add(RefreshIncidentsEvent(propertyId: projet!.id));
+                }
               },
               label: '',
               backgroundColor: HexColor('#FF5C02'),

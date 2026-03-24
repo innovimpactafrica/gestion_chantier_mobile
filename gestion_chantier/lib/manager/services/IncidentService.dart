@@ -1,6 +1,8 @@
 import 'package:gestion_chantier/manager/models/IncidentAnalysisModel.dart';
 import 'package:gestion_chantier/manager/models/IncidentModel.dart';
 import 'package:gestion_chantier/manager/services/api_service.dart';
+import 'package:gestion_chantier/manager/services/AuthService.dart';
+import 'package:gestion_chantier/shared/services/UserCacheService.dart';
 import 'package:gestion_chantier/manager/utils/constant.dart';
 import 'dart:io';
 import 'package:dio/dio.dart';
@@ -41,38 +43,48 @@ class IncidentService {
     int? propertyId,
     required List<File> pictures,
   }) async {
-    final map = <String, dynamic>{
+    print('[IncidentService] addIncident: title=$title, propertyId=$propertyId, pictures=${pictures.length}');
+
+    if (propertyId == null) {
+      throw Exception('propertyId est null, impossible d\'envoyer le signalement');
+    }
+
+    UserCacheService.instance.invalidate();
+    final userData = await AuthService().connectedUser();
+    final int? reporterId = userData?['id'];
+    print('[IncidentService] reporterId=$reporterId');
+
+    final formData = FormData.fromMap({
       'title': title,
       'description': description,
-    };
+      'propertyId': propertyId,
+      if (reporterId != null) 'authorId': reporterId,
+    });
 
-    if (propertyId != null && propertyId > 0) {
-      map['propertyId'] = propertyId;
+    for (final file in pictures) {
+      formData.files.add(MapEntry(
+        'pictures',
+        await MultipartFile.fromFile(
+          file.path,
+          filename: file.path.split('/').last,
+          contentType: DioMediaType('image', 'jpeg'),
+        ),
+      ));
     }
 
-    if (pictures.isNotEmpty) {
-      map['pictures'] = [
-        for (final file in pictures)
-          await MultipartFile.fromFile(
-            file.path,
-            filename: file.path.split('/').last,
-          ),
-      ];
-    }
-
-    final formData = FormData.fromMap(map);
+    print('[IncidentService] FormData: title=$title, propertyId=$propertyId, authorId=$reporterId, pictures=${pictures.length}');
 
     try {
       final response = await _apiService.dio.post(
         '/incidents/save',
         data: formData,
+        options: Options(validateStatus: (status) => status! < 500),
       );
-
+      print('[IncidentService] Réponse: ${response.statusCode} - ${response.data}');
       if (response.statusCode != 200 && response.statusCode != 201) {
-        throw Exception('Erreur lors de l\'ajout du signalement');
+        throw Exception('Erreur ${response.statusCode}: ${response.data}');
       }
     } on DioException catch (e) {
-      print('[IncidentService] Erreur ${e.response?.statusCode}: ${e.response?.data}');
       throw Exception('Erreur ${e.response?.statusCode}: ${e.response?.data}');
     }
   }

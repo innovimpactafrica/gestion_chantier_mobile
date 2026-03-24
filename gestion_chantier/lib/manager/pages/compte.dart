@@ -258,6 +258,12 @@ class _MonCompteOuvrierPageState extends State<ComptePage> {
                             fit: BoxFit.cover,
                             width: 94,
                             height: 94,
+                            errorBuilder: (_, __, ___) => Image.asset(
+                              'assets/images/avatar1.png',
+                              fit: BoxFit.cover,
+                              width: 94,
+                              height: 94,
+                            ),
                           )
                               : Image.asset(
                             'assets/images/avatar1.png',

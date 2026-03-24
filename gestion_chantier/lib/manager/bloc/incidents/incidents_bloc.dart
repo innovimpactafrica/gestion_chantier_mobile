@@ -91,7 +91,7 @@ class IncidentsBloc extends Bloc<IncidentsEvent, IncidentsState> {
       final response = await _incidentService.getIncidents(
         propertyId: event.propertyId,
         page: 0,
-        size: 10,
+        size: 100,
       );
 
       emit(

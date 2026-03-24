@@ -313,7 +313,8 @@ class _InventairesTabState extends State<InventairesTab> {
   Widget _buildMateriauListTile(Materiau materiau) {
     return _buildListTile(
       context,
-      icon: SvgPicture.asset(materiau.icone, width: 20, height: 20, colorFilter: ColorFilter.mode(HexColor('#777777'), BlendMode.srcIn)),
+      icon: Icon(materiau.icon, size: 22, color: materiau.iconColor),
+      iconBgColor: materiau.iconColor.withOpacity(0.12),
       title: materiau.nom,
       subtitle:
           '${materiau.quantiteActuelle} ${materiau.unite} / seuil: ${materiau.seuil} ${materiau.unite}',
@@ -327,6 +328,7 @@ class _InventairesTabState extends State<InventairesTab> {
   Widget _buildListTile(
     BuildContext context, {
     required Widget icon,
+    Color? iconBgColor,
     required String title,
     String? subtitle,
     StatutMateriau? statut,
@@ -341,7 +343,7 @@ class _InventairesTabState extends State<InventairesTab> {
       leading: Container(
         padding: const EdgeInsets.all(7),
         decoration: BoxDecoration(
-          color: HexColor('#777777').withOpacity(0.1),
+          color: iconBgColor ?? HexColor('#777777').withOpacity(0.1),
           borderRadius: BorderRadius.circular(20),
         ),
         child: icon,
@@ -708,7 +710,8 @@ class Materiau {
   final int quantiteActuelle;
   final int seuil;
   final String unite;
-  final String icone; // chemin SVG
+  final IconData icon;
+  final Color iconColor;
   final StatutMateriau statut;
 
   Materiau({
@@ -717,7 +720,8 @@ class Materiau {
     required this.quantiteActuelle,
     required this.seuil,
     required this.unite,
-    required this.icone,
+    required this.icon,
+    required this.iconColor,
     required this.statut,
   });
 }

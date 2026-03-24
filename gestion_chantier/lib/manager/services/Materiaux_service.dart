@@ -10,6 +10,7 @@ class MaterialsApiService {
     try {
       final response = await _apiService.dio.get(
         '/materials/property/$propertyId',
+        queryParameters: {'page': 0, 'size': 1000},
       );
 
       if (response.statusCode == 200) {
@@ -233,13 +234,9 @@ class MaterialsApiService {
         );
       }
     } on DioException catch (e) {
-      if (e.response != null) {
-        print('❌ MaterialsApiService: Status Code: ${e.response?.statusCode}');
-        print('❌ MaterialsApiService: Response Data: ${e.response?.data}');
-      }
-      throw Exception(
-        'Erreur réseau lors de l\'ajout du matériau: ${e.message}',
-      );
+      print('❌ MaterialsApiService: Status Code: ${e.response?.statusCode}');
+      print('❌ MaterialsApiService: Response Data: ${e.response?.data}');
+      rethrow;
     } catch (e) {
       throw Exception('Erreur inattendue lors de l\'ajout du matériau: $e');
     }

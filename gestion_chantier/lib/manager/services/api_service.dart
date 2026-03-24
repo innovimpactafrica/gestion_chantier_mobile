@@ -22,7 +22,6 @@ class ApiService {
         receiveTimeout: Duration(seconds: 60),
         headers: {
           "User-Agent": "curl/7.64.1",
-          "Content-Type": "application/json",
           "Accept": "*/*",
         },
       ),
@@ -31,25 +30,21 @@ class ApiService {
     dio.interceptors.add(
       InterceptorsWrapper(
         onRequest: (options, handler) async {
-          // DEBUG: Afficher tous les headers envoyés
-          print('[DEBUG] Headers envoyés: \\n${options.headers}');
+          // Laisser Dio gérer Content-Type pour multipart
+          if (options.data is FormData) {
+            options.headers.remove('Content-Type');
+          }
+          print('[DEBUG] Headers envoyés: ${options.headers}');
           if (_isProtectedApi(options)) {
             String? token = await _getToken();
             if (token != null) {
-              // Try different authorization header formats
               options.headers['Authorization'] = 'Bearer $token';
-              // Alternative formats that some servers might expect
-              options.headers['X-Auth-Token'] = token;
-              options.headers['X-API-Key'] = token;
-
-              print(
-                '🔐 Token ajouté pour \\${options.uri}: \\${token.substring(0, 20)}...',
-              );
+              print('🔐 Token ajouté: ${token.substring(0, 30)}...');
             } else {
-              print('⚠️ Aucun token trouvé pour \\${options.uri}');
+              print('⚠️ Aucun token trouvé pour ${options.uri}');
             }
           } else {
-            print('🔓 API non protégée: \\${options.uri}');
+            print('🔓 API non protégée: ${options.uri}');
           }
 
           return handler.next(options);

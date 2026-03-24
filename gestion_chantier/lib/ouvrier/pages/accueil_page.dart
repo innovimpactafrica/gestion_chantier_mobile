@@ -36,6 +36,19 @@ class AccueilOuvrierPage extends StatefulWidget {
 class _AccueilOuvrierPageState extends State<AccueilOuvrierPage> {
   int? _propertyId;
 
+  Future<void> _loadPropertyId(List tasks) async {
+    if (_propertyId != null || tasks.isEmpty) return;
+    for (final task in tasks) {
+      try {
+        final detail = await TaskService().fetchTaskDetail(task.id);
+        if (detail.realEstateProperty?.id != null) {
+          if (mounted) setState(() => _propertyId = detail.realEstateProperty!.id);
+          return;
+        }
+      } catch (_) {}
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -74,9 +87,12 @@ class _AccueilOuvrierPageState extends State<AccueilOuvrierPage> {
                 _TodayTasksSection(
                   onVoirPlus: widget.onVoirPlus,
                   onPropertyIdFound: (id) {
-                    if (_propertyId != id) {
+                    if (id != null && _propertyId != id) {
                       setState(() => _propertyId = id);
                     }
+                  },
+                  onTasksLoaded: (tasks) {
+                    if (_propertyId == null) _loadPropertyId(tasks);
                   },
                 ),
                 const SizedBox(height: 32),
@@ -280,8 +296,13 @@ class _WelcomeCard extends StatelessWidget {
 class _TodayTasksSection extends StatelessWidget {
   final VoidCallback onVoirPlus;
   final ValueChanged<int?>? onPropertyIdFound;
+  final ValueChanged<List>? onTasksLoaded;
 
-  const _TodayTasksSection({required this.onVoirPlus, this.onPropertyIdFound});
+  const _TodayTasksSection({
+    required this.onVoirPlus,
+    this.onPropertyIdFound,
+    this.onTasksLoaded,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -308,12 +329,13 @@ class _TodayTasksSection extends StatelessWidget {
                         taskState.tasks
                             .where((t) => t.status != 'DONE')
                             .toList();
-                    // Extract propertyId from the first task that has one
+                    // Extract propertyId from task detail if not in list
                     final foundId = taskState.tasks
                         .map((t) => t.realEstateProperty?.id)
                         .firstWhere((id) => id != null, orElse: () => null);
                     WidgetsBinding.instance.addPostFrameCallback((_) {
                       onPropertyIdFound?.call(foundId);
+                      onTasksLoaded?.call(taskState.tasks);
                     });
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -778,13 +800,65 @@ class _SignalementModalState extends State<_SignalementModal> {
   }
 
   Future<void> _pickPhoto() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (sheetCtx) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 12),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDDE1E9),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+              ),
+              ListTile(
+                leading: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFF5C02).withOpacity(0.10),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.camera_alt_outlined, color: Color(0xFFFF5C02)),
+                ),
+                title: const Text('Prendre une photo',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                onTap: () => Navigator.pop(sheetCtx, ImageSource.camera),
+              ),
+              ListTile(
+                leading: Container(
+                  width: 40, height: 40,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF1A365D).withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: const Icon(Icons.photo_library_outlined, color: Color(0xFF1A365D)),
+                ),
+                title: const Text('Choisir depuis la galerie',
+                    style: TextStyle(fontWeight: FontWeight.w600, fontSize: 15)),
+                onTap: () => Navigator.pop(sheetCtx, ImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (source == null) return;
     final picker = ImagePicker();
     final picked = await picker.pickImage(
-      source: ImageSource.gallery,
+      source: source,
       maxWidth: 1024,
       imageQuality: 70,
     );
-    if (picked != null) {
+    if (picked != null && mounted) {
       setState(() => _photos.add(File(picked.path)));
     }
   }
@@ -798,6 +872,10 @@ class _SignalementModalState extends State<_SignalementModal> {
     }
     if (description.isEmpty) {
       ToastUtils.show('Veuillez saisir une description.');
+      return;
+    }
+    if (_photos.isEmpty) {
+      ToastUtils.show('Veuillez ajouter au moins une photo.');
       return;
     }
     setState(() => _sending = true);

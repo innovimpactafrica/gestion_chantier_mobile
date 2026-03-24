@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart';
 import 'package:gestion_chantier/manager/models/PropertyType.dart';
 import 'package:gestion_chantier/manager/widgets/projetsaccueil/projet/stock/Tab2/inventaires/inventaires.dart';
 
@@ -23,32 +24,15 @@ class MaterialModel {
   });
 
   factory MaterialModel.fromJson(Map<String, dynamic> json) {
-    try {
-      print('Parsing MaterialModel from JSON: $json');
-
-      return MaterialModel(
-        id: _parseIntSafely(json['id']),
-        label: _parseStringSafely(json['label']),
-        quantity: _parseIntSafely(json['quantity']),
-        criticalThreshold: _parseIntSafely(json['criticalThreshold']),
-        createdAt: _parseIntListSafely(json['createdAt']),
-        unit: Unit.fromJson(_parseMapSafely(json['unit'])),
-        property: PropertyType.fromJson(_parseMapSafely(json['property'])),
-      );
-    } catch (e, stackTrace) {
-      print('Erreur lors du parsing de MaterialModel: $e');
-      print('StackTrace: $stackTrace');
-      print('JSON reçu: $json');
-
-      // Log des valeurs nulles spécifiques
-      json.forEach((key, value) {
-        if (value == null) {
-          print('Valeur null trouvée pour la clé: $key');
-        }
-      });
-
-      rethrow;
-    }
+    return MaterialModel(
+      id: _parseIntSafely(json['id']),
+      label: _parseStringSafely(json['label']),
+      quantity: _parseIntSafely(json['quantity']),
+      criticalThreshold: _parseIntSafely(json['criticalThreshold']),
+      createdAt: _parseIntListSafely(json['createdAt']),
+      unit: Unit.fromJson(_parseMapSafely(json['unit'])),
+      property: PropertyType.fromJson(_parseMapSafely(json['property'])),
+    );
   }
 
   Map<String, dynamic> toJson() {
@@ -65,65 +49,27 @@ class MaterialModel {
 
   // Méthodes utilitaires pour parser en sécurité avec gestion améliorée des null
   static int _parseIntSafely(dynamic value) {
-    if (value == null) {
-      print('Warning: Parsing null value as int, returning 0');
-      return 0;
-    }
+    if (value == null) return 0;
     if (value is int) return value;
-    if (value is String) {
-      final parsed = int.tryParse(value);
-      if (parsed == null) {
-        print('Warning: Could not parse string "$value" as int, returning 0');
-        return 0;
-      }
-      return parsed;
-    }
     if (value is double) return value.toInt();
-    print(
-      'Warning: Unexpected type ${value.runtimeType} for int parsing, returning 0',
-    );
+    if (value is String) return int.tryParse(value) ?? 0;
     return 0;
   }
 
   static String _parseStringSafely(dynamic value) {
-    if (value == null) {
-      print('Warning: Parsing null value as string, returning empty string');
-      return '';
-    }
+    if (value == null) return '';
     return value.toString();
   }
 
   static List<int> _parseIntListSafely(dynamic value) {
-    if (value == null) {
-      print('Warning: Parsing null value as int list, returning empty list');
-      return [];
-    }
-    if (value is List) {
-      return value.map((e) => _parseIntSafely(e)).toList();
-    }
-    print(
-      'Warning: Expected List but got ${value.runtimeType}, returning empty list',
-    );
+    if (value is List) return value.map((e) => _parseIntSafely(e)).toList();
     return [];
   }
 
   static Map<String, dynamic> _parseMapSafely(dynamic value) {
-    if (value == null) {
-      print('Warning: Parsing null value as map, returning empty map');
-      return {};
-    }
+    if (value == null) return {};
     if (value is Map<String, dynamic>) return value;
-    if (value is Map) {
-      try {
-        return Map<String, dynamic>.from(value);
-      } catch (e) {
-        print('Warning: Could not convert Map to Map<String, dynamic>: $e');
-        return {};
-      }
-    }
-    print(
-      'Warning: Expected Map but got ${value.runtimeType}, returning empty map',
-    );
+    if (value is Map) return Map<String, dynamic>.from(value);
     return {};
   }
 
@@ -140,28 +86,49 @@ class MaterialModel {
 
   // Conversion vers le modèle Materiau utilisé dans l'interface
   Materiau toMateriau() {
+    final iconData = _getIconForMaterial(label);
     return Materiau(
       id: id,
       nom: label.isEmpty ? 'Matériau sans nom' : label,
       quantiteActuelle: quantity,
       seuil: criticalThreshold,
       unite: unit.code.isEmpty ? 'unité' : unit.code,
-      icone: _getIconPathForMaterial(label),
+      icon: iconData.icon,
+      iconColor: iconData.color,
       statut: statut,
     );
   }
 
-  // Méthode pour obtenir le chemin SVG selon le type de matériau
-  String _getIconPathForMaterial(String materialName) {
-    final name = materialName.toLowerCase();
-    if (name.contains('beton') || name.contains('béton') || name.contains('concrete')) {
-      return 'assets/icons/icon.svg';
-    } else if (name.contains('ciment') || name.contains('cement')) {
-      return 'assets/icons/mdi_sack.svg';
-    } else if (name.contains('carrelage') || name.contains('tile')) {
-      return 'assets/icons/mdi_bricks.svg';
+  static ({IconData icon, Color color}) _getIconForMaterial(String name) {
+    final n = name.toLowerCase();
+    if (n.contains('b\u00e9ton') || n.contains('beton') || n.contains('concrete')) {
+      return (icon: Icons.foundation, color: const Color(0xFF6B7280));
+    } else if (n.contains('ciment') || n.contains('cement')) {
+      return (icon: Icons.science, color: const Color(0xFF8B5CF6));
+    } else if (n.contains('carrelage') || n.contains('carreau') || n.contains('tile')) {
+      return (icon: Icons.grid_4x4, color: const Color(0xFF0EA5E9));
+    } else if (n.contains('sable') || n.contains('sand')) {
+      return (icon: Icons.terrain, color: const Color(0xFFF59E0B));
+    } else if (n.contains('pl\u00e2tre') || n.contains('platre') || n.contains('plaster')) {
+      return (icon: Icons.format_paint, color: const Color(0xFFEC4899));
+    } else if (n.contains('fil') || n.contains('wire') || n.contains('c\u00e2ble') || n.contains('cable')) {
+      return (icon: Icons.cable, color: const Color(0xFFEF4444));
+    } else if (n.contains('planche') || n.contains('bois') || n.contains('wood') || n.contains('board')) {
+      return (icon: Icons.carpenter, color: const Color(0xFF92400E));
+    } else if (n.contains('fer') || n.contains('acier') || n.contains('steel') || n.contains('iron')) {
+      return (icon: Icons.hardware, color: const Color(0xFF475569));
+    } else if (n.contains('peinture') || n.contains('paint')) {
+      return (icon: Icons.brush, color: const Color(0xFF10B981));
+    } else if (n.contains('brique') || n.contains('brick')) {
+      return (icon: Icons.view_module, color: const Color(0xFFDC2626));
+    } else if (n.contains('verre') || n.contains('glass')) {
+      return (icon: Icons.window, color: const Color(0xFF06B6D4));
+    } else if (n.contains('tuyau') || n.contains('pipe') || n.contains('tube')) {
+      return (icon: Icons.plumbing, color: const Color(0xFF3B82F6));
+    } else if (n.contains('colle') || n.contains('glue')) {
+      return (icon: Icons.water_drop, color: const Color(0xFFF97316));
     } else {
-      return 'assets/icons/box.svg';
+      return (icon: Icons.inventory_2, color: const Color(0xFF6B7280));
     }
   }
 

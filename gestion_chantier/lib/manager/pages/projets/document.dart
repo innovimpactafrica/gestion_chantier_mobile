@@ -143,25 +143,42 @@ class _DocumentsPageState extends State<DocumentsPage> {
     return documentTypes;
   }
 
-  Widget _getDocumentIcon(String title) {
+  String _getExtension(String filePath) {
+    final name = filePath.split('/').last.toLowerCase();
+    final parts = name.split('.');
+    return parts.length > 1 ? parts.last : '';
+  }
+
+  Widget _getDocumentIcon(String filePath) {
+    final ext = _getExtension(filePath);
     String svgAsset;
-
-    if (title.toLowerCase().contains('pdf') ||
-        title.toLowerCase().contains('étude') ||
-        title.toLowerCase().contains('rapport')) {
+    if (ext == 'pdf') {
       svgAsset = 'assets/icons/p.svg';
-    } else if (title.toLowerCase().contains('word') ||
-        title.toLowerCase().contains('suivi') ||
-        title.toLowerCase().contains('fiche')) {
+    } else if (['doc', 'docx'].contains(ext)) {
       svgAsset = 'assets/icons/w.svg';
-    } else if (title.toLowerCase().contains('excel') ||
-        title.toLowerCase().contains('contrôle') ||
-        title.toLowerCase().contains('qualité')) {
+    } else if (['xls', 'xlsx', 'csv'].contains(ext)) {
       svgAsset = 'assets/icons/x.svg';
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].contains(ext)) {
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.purple.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.image, color: Colors.purple, size: 24),
+      );
     } else {
-      svgAsset = 'assets/icons/w.svg';
+      return Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: Colors.grey.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Icon(Icons.insert_drive_file, color: Colors.grey, size: 24),
+      );
     }
-
     return Container(
       width: 40,
       height: 40,
@@ -170,40 +187,22 @@ class _DocumentsPageState extends State<DocumentsPage> {
     );
   }
 
-  Color _getDocumentIconColor(String title) {
-    if (title.toLowerCase().contains('pdf') ||
-        title.toLowerCase().contains('étude') ||
-        title.toLowerCase().contains('rapport')) {
-      return Colors.red;
-    } else if (title.toLowerCase().contains('word') ||
-        title.toLowerCase().contains('suivi') ||
-        title.toLowerCase().contains('fiche')) {
-      return Colors.blue;
-    } else if (title.toLowerCase().contains('excel') ||
-        title.toLowerCase().contains('contrôle') ||
-        title.toLowerCase().contains('qualité')) {
-      return Colors.green;
-    } else {
-      return Colors.grey;
-    }
+  Color _getDocumentIconColor(String filePath) {
+    final ext = _getExtension(filePath);
+    if (ext == 'pdf') return Colors.red;
+    if (['doc', 'docx'].contains(ext)) return Colors.blue;
+    if (['xls', 'xlsx', 'csv'].contains(ext)) return Colors.green;
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].contains(ext)) return Colors.purple;
+    return Colors.grey;
   }
 
-  String _getDocumentTypeText(String title) {
-    if (title.toLowerCase().contains('pdf') ||
-        title.toLowerCase().contains('étude') ||
-        title.toLowerCase().contains('rapport')) {
-      return 'PDF';
-    } else if (title.toLowerCase().contains('word') ||
-        title.toLowerCase().contains('suivi') ||
-        title.toLowerCase().contains('fiche')) {
-      return 'W';
-    } else if (title.toLowerCase().contains('excel') ||
-        title.toLowerCase().contains('contrôle') ||
-        title.toLowerCase().contains('qualité')) {
-      return 'X';
-    } else {
-      return 'DOC';
-    }
+  String _getDocumentTypeText(String filePath) {
+    final ext = _getExtension(filePath);
+    if (ext == 'pdf') return 'PDF';
+    if (['doc', 'docx'].contains(ext)) return 'DOC';
+    if (['xls', 'xlsx', 'csv'].contains(ext)) return 'XLS';
+    if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].contains(ext)) return 'IMG';
+    return ext.toUpperCase().isNotEmpty ? ext.toUpperCase() : 'FILE';
   }
 
   String _getFileSize(String fileName) {
@@ -744,7 +743,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
-            _getDocumentIcon(document.title),
+            _getDocumentIcon(document.file),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -821,11 +820,11 @@ class _DocumentsPageState extends State<DocumentsPage> {
                     child: Container(
                       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                       decoration: BoxDecoration(
-                        color: _getDocumentIconColor(document.title),
+                        color: _getDocumentIconColor(document.file),
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        _getDocumentTypeText(document.title),
+                        _getDocumentTypeText(document.file),
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8,
@@ -841,7 +840,7 @@ class _DocumentsPageState extends State<DocumentsPage> {
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  _getDocumentIcon(document.title),
+                  _getDocumentIcon(document.file),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Column(
@@ -870,300 +869,30 @@ class _DocumentsPageState extends State<DocumentsPage> {
   }
 
   Widget _buildDocumentPreview(DocumentModel document) {
-    final title = document.title.toLowerCase();
-
-    if (title.contains('word') ||
-        title.contains('suivi') ||
-        title.contains('fiche')) {
-      return _buildWordPreview(document);
-    } else if (title.contains('pdf') ||
-        title.contains('étude') ||
-        title.contains('rapport')) {
-      return _buildPdfPreview(document);
-    } else if (title.contains('excel') ||
-        title.contains('contrôle') ||
-        title.contains('qualité')) {
-      return _buildExcelPreview(document);
+    final ext = _getExtension(document.file);
+    final color = _getDocumentIconColor(document.file);
+    final label = _getDocumentTypeText(document.file);
+    IconData icon;
+    if (ext == 'pdf') {
+      icon = Icons.picture_as_pdf;
+    } else if (['doc', 'docx'].contains(ext)) {
+      icon = Icons.description;
+    } else if (['xls', 'xlsx', 'csv'].contains(ext)) {
+      icon = Icons.table_chart;
+    } else if (['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'].contains(ext)) {
+      icon = Icons.image;
     } else {
-      return _buildGenericPreview();
+      icon = Icons.insert_drive_file;
     }
-  }
-
-  Widget _buildWordPreview(DocumentModel document) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.blue[50],
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.blue,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Center(
-                  child: Text(
-                    'W',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 6,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Document Word',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.blue[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Text(
-          document.title.length > 25
-              ? '${document.title.substring(0, 25)}...'
-              : document.title,
-          style: const TextStyle(
-            fontSize: 9,
-            fontWeight: FontWeight.bold,
-            color: Colors.black87,
-          ),
-        ),
-        const SizedBox(height: 6),
-        ...List.generate(6, (index) {
-          return Container(
-            margin: const EdgeInsets.only(bottom: 2),
-            height: 2,
-            width: double.infinity,
-            color: Colors.grey[300],
-          );
-        }),
-      ],
-    );
-  }
-
-  Widget _buildPdfPreview(DocumentModel document) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.red[50],
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.red,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Center(
-                  child: Text(
-                    'PDF',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 5,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Document PDF',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.red[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          padding: const EdgeInsets.all(4),
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.grey[300]!),
-            borderRadius: BorderRadius.circular(2),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(vertical: 2),
-                decoration: BoxDecoration(color: Colors.grey[100]),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(height: 2, color: Colors.grey[400]),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Container(height: 2, color: Colors.grey[400]),
-                    ),
-                    const SizedBox(width: 4),
-                    Expanded(
-                      child: Container(height: 2, color: Colors.grey[400]),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 2),
-              ...List.generate(
-                4,
-                    (index) => Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 1),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Container(height: 1.5, color: Colors.grey[300]),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Container(height: 1.5, color: Colors.grey[300]),
-                      ),
-                      const SizedBox(width: 4),
-                      Expanded(
-                        child: Container(height: 1.5, color: Colors.grey[300]),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildExcelPreview(DocumentModel document) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-          decoration: BoxDecoration(
-            color: Colors.green[50],
-            borderRadius: BorderRadius.circular(4),
-          ),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 12,
-                height: 12,
-                decoration: BoxDecoration(
-                  color: Colors.green,
-                  borderRadius: BorderRadius.circular(2),
-                ),
-                child: Center(
-                  child: Text(
-                    'Xsl',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 6,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-              const SizedBox(width: 4),
-              Text(
-                'Feuille Excel',
-                style: TextStyle(
-                  fontSize: 8,
-                  color: Colors.green[700],
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 8),
-        Container(
-          child: Column(
-            children: List.generate(
-              5,
-                  (row) => Padding(
-                padding: const EdgeInsets.only(bottom: 2),
-                child: Row(
-                  children: List.generate(
-                    4,
-                        (col) => Expanded(
-                      child: Container(
-                        height: 12,
-                        margin: const EdgeInsets.only(right: 2),
-                        decoration: BoxDecoration(
-                          border: Border.all(
-                            color: Colors.grey[300]!,
-                            width: 0.5,
-                          ),
-                          color: row == 0 ? Colors.grey[100] : Colors.white,
-                        ),
-                        child:
-                        row == 0
-                            ? Center(
-                          child: Container(
-                            height: 2,
-                            width: 20,
-                            color: Colors.grey[400],
-                          ),
-                        )
-                            : Center(
-                          child: Container(
-                            height: 1.5,
-                            width: 15,
-                            color: Colors.grey[300],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
-  Widget _buildGenericPreview() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(height: 20, width: 80, color: Colors.grey[300]),
-        const SizedBox(height: 8),
-        ...List.generate(
-          5,
-              (index) => Container(
-            margin: const EdgeInsets.only(bottom: 3),
-            height: 2,
-            width: 120,
-            color: Colors.grey[300],
-          ),
-        ),
-      ],
+    return Center(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 32, color: color),
+          const SizedBox(height: 4),
+          Text(label, style: TextStyle(fontSize: 10, color: color, fontWeight: FontWeight.bold)),
+        ],
+      ),
     );
   }
 }

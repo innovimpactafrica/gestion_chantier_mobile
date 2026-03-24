@@ -22,7 +22,6 @@ class ApiService {
         receiveTimeout: Duration(seconds: 60),
         headers: {
           "User-Agent": "curl/7.64.1",
-          "Content-Type": "application/json",
           "Accept": "*/*",
         },
       ),

@@ -17,8 +17,8 @@ class AddSignalementModal extends StatefulWidget {
   State<AddSignalementModal> createState() => _AddSignalementModalState();
 
   // Méthode statique pour afficher le modal
-  static Future<void> show(BuildContext context, {required int propertyId}) {
-    return showModalBottomSheet(
+  static Future<bool?> show(BuildContext context, {required int propertyId}) {
+    return showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
@@ -91,6 +91,12 @@ class _AddSignalementModalState extends State<AddSignalementModal> {
       );
       return;
     }
+    if (_selectedImages.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Veuillez ajouter au moins une photo')),
+      );
+      return;
+    }
     setState(() {
       _isLoading = true;
     });
@@ -103,7 +109,7 @@ class _AddSignalementModalState extends State<AddSignalementModal> {
         pictures: _selectedImages,
       );
       print('[DEBUG] Signalement ajouté avec succès');
-      Navigator.pop(context);
+      if (mounted) Navigator.pop(context, true);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Signalement ajouté avec succès')),
       );
